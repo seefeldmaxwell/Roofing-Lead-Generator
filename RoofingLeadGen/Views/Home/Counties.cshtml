@@ -1,0 +1,87 @@
+@using RoofingLeadGen.Services
+@{
+    ViewData["PageTitle"] = "All 67 Florida Counties - Property Data & Roofing Leads";
+    ViewData["MetaDescription"] = "Browse property data, building permits, flood zones, and roofing lead information for all 67 Florida counties. Find opportunities in every FL market.";
+    ViewData["MetaKeywords"] = "Florida counties property data, FL roofing leads by county, Florida building permits, Florida flood zones by county";
+    ViewData["CanonicalUrl"] = "/counties";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+@section HeadExtra {
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "CollectionPage",
+        "name": "All 67 Florida Counties",
+        "description": "@ViewData["MetaDescription"]",
+        "url": "/counties",
+        "breadcrumb": {
+            "@@type": "BreadcrumbList",
+            "itemListElement": [
+                { "@@type": "ListItem", "position": 1, "name": "Home", "item": "/" },
+                { "@@type": "ListItem", "position": 2, "name": "Florida Counties" }
+            ]
+        }
+    }
+    </script>
+}
+
+<section class="location-hero" style="padding-bottom: 2rem;">
+    <div class="section-inner">
+        <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+            <a href="/">Home</a> <i class="fas fa-chevron-right"></i>
+            <span>Florida Counties</span>
+        </nav>
+        <h1>Property Data for All<br/><span class="hero-accent">67 Florida Counties</span></h1>
+        <p class="hero-description">
+            Browse roofing leads, building permits, flood zones, and property data by county.
+            Each county page includes real data from FEMA, FDOT, and other government sources.
+        </p>
+    </div>
+</section>
+
+<section class="counties-list-section">
+    <div class="section-inner">
+        <h2 class="section-title">Florida Counties A-Z</h2>
+
+        <div class="counties-grid">
+            @foreach (var county in LandingPageService.FloridaCounties.OrderBy(c => c.Value))
+            {
+                var cities = LandingPageService.FloridaCities
+                    .Where(c => c.Value.County.Equals(county.Value, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                <div class="county-card-link">
+                    <a href="/florida/@county.Key" class="county-card-title">
+                        <i class="fas fa-map-marker-alt"></i> @county.Value County
+                    </a>
+                    @if (cities.Any())
+                    {
+                        <div class="county-card-cities">
+                            @foreach (var city in cities.Take(5))
+                            {
+                                <a href="/florida/@county.Key/@city.Key">@city.Value.City</a>
+                            }
+                            @if (cities.Count > 5)
+                            {
+                                <span class="more-cities">+@(cities.Count - 5) more</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="section-inner">
+        <div class="cta-content">
+            <h2>Search Any Florida Property</h2>
+            <p>Access property records, permits, and risk data from official government APIs.</p>
+            <a href="/account/register" class="hero-btn-primary">
+                <i class="fas fa-user-plus"></i> Create Free Account
+            </a>
+        </div>
+    </div>
+</section>

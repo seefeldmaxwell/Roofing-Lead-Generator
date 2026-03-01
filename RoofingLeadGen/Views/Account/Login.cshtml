@@ -1,0 +1,71 @@
+@model LoginModel
+@{
+    ViewData["Title"] = "Sign In";
+    Layout = "~/Views/Shared/_AuthLayout.cshtml";
+}
+
+<div class="auth-page">
+    <div class="auth-container">
+        <div class="auth-left">
+            <div class="auth-brand">
+                <a href="/">
+                    <i class="fas fa-home"></i>
+                    <span>FL Property<br/><small>Permit Tracker</small></span>
+                </a>
+            </div>
+            <div class="auth-hero">
+                <h1>Welcome Back</h1>
+                <p>Access real-time Florida property data, flood zones, fire risk analysis, and permit tracking.</p>
+                <div class="auth-features">
+                    <div class="auth-feature"><i class="fas fa-check-circle"></i> Real government data from FEMA, FDOT & NOAA</div>
+                    <div class="auth-feature"><i class="fas fa-check-circle"></i> Track permits across all 67 Florida counties</div>
+                    <div class="auth-feature"><i class="fas fa-check-circle"></i> Flood zone & wildfire risk scoring</div>
+                    <div class="auth-feature"><i class="fas fa-check-circle"></i> Lead generation for roofers & adjusters</div>
+                </div>
+            </div>
+        </div>
+        <div class="auth-right">
+            <div class="auth-form-container">
+                <h2>Sign in to your account</h2>
+                <p class="auth-subtitle">Enter your credentials to access the dashboard</p>
+
+                <form method="post" asp-action="Login" asp-controller="Account">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="auth-error">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <p><i class="fas fa-exclamation-circle"></i> @error.ErrorMessage</p>
+                            }
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label for="Email"><i class="fas fa-envelope"></i> Email Address</label>
+                        <input type="email" id="Email" name="Email" value="@Model?.Email" class="form-control" placeholder="you@company.com" required autofocus />
+                    </div>
+                    <div class="form-group">
+                        <label for="Password"><i class="fas fa-lock"></i> Password</label>
+                        <input type="password" id="Password" name="Password" class="form-control" placeholder="Enter your password" required />
+                    </div>
+                    <div class="form-group-inline">
+                        <label class="checkbox-label">
+                            <input type="checkbox" name="RememberMe" value="true" /> Remember me
+                        </label>
+                    </div>
+                    <button type="submit" class="auth-btn">
+                        <i class="fas fa-sign-in-alt"></i> Sign In
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Don't have an account? <a href="/account/register?returnUrl=@ViewData["ReturnUrl"]">Create one now</a></p>
+                    <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Back to home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

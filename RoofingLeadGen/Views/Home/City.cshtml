@@ -1,0 +1,178 @@
+@using RoofingLeadGen.Services
+@{
+    var countyName = (string)ViewData["CountyName"]!;
+    var countySlug = (string)ViewData["CountySlug"]!;
+    var cityName = (string)ViewData["CityName"]!;
+    var citySlug = (string)ViewData["CitySlug"]!;
+    var stats = (CountyStats)ViewData["Stats"]!;
+
+    ViewData["PageTitle"] = $"Roofing Leads & Property Data in {cityName}, FL";
+    ViewData["MetaDescription"] = $"Find roofing leads in {cityName}, Florida. Access real-time property records, building permits, FEMA flood zones, and wildfire risk data for {cityName} in {countyName} County.";
+    ViewData["MetaKeywords"] = $"{cityName} FL property data, {cityName} roofing permits, {cityName} Florida flood zone, {cityName} roofing leads, {cityName} {countyName} County building permits";
+    ViewData["CanonicalUrl"] = $"/florida/{countySlug}/{citySlug}";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+@section HeadExtra {
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "WebPage",
+        "name": "Roofing Leads & Property Data in @cityName, FL",
+        "description": "@ViewData["MetaDescription"]",
+        "url": "/florida/@countySlug/@citySlug",
+        "about": {
+            "@@type": "City",
+            "name": "@cityName",
+            "containedInPlace": {
+                "@@type": "AdministrativeArea",
+                "name": "@countyName County",
+                "containedInPlace": {
+                    "@@type": "State",
+                    "name": "Florida"
+                }
+            }
+        },
+        "breadcrumb": {
+            "@@type": "BreadcrumbList",
+            "itemListElement": [
+                { "@@type": "ListItem", "position": 1, "name": "Home", "item": "/" },
+                { "@@type": "ListItem", "position": 2, "name": "Florida Counties", "item": "/counties" },
+                { "@@type": "ListItem", "position": 3, "name": "@countyName County", "item": "/florida/@countySlug" },
+                { "@@type": "ListItem", "position": 4, "name": "@cityName" }
+            ]
+        }
+    }
+    </script>
+}
+
+<section class="location-hero">
+    <div class="section-inner">
+        <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+            <a href="/">Home</a> <i class="fas fa-chevron-right"></i>
+            <a href="/counties">Florida Counties</a> <i class="fas fa-chevron-right"></i>
+            <a href="/florida/@countySlug">@countyName County</a> <i class="fas fa-chevron-right"></i>
+            <span>@cityName</span>
+        </nav>
+
+        <h1>Roofing Leads & Property Data in<br/><span class="hero-accent">@cityName, Florida</span></h1>
+        <p class="hero-description">
+            Access real-time property records, building permits, flood zone data, and risk analysis for
+            @cityName in @countyName County, FL. All data from official government sources.
+        </p>
+
+        <div class="hero-actions">
+            <a href="/account/register" class="hero-btn-primary">
+                <i class="fas fa-rocket"></i> Search @cityName Properties
+            </a>
+            <a href="/account/login" class="hero-btn-secondary">
+                <i class="fas fa-sign-in-alt"></i> Sign In
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="location-stats-section">
+    <div class="section-inner">
+        <h2 class="section-title">@cityName, @countyName County Overview</h2>
+        <div class="location-stats-grid">
+            <div class="location-stat-card">
+                <i class="fas fa-home"></i>
+                <span class="location-stat-num">@(stats.PropertyCount > 0 ? stats.PropertyCount.ToString("N0") : "Search")</span>
+                <span class="location-stat-label">County Properties</span>
+            </div>
+            <div class="location-stat-card">
+                <i class="fas fa-file-alt"></i>
+                <span class="location-stat-num">@(stats.PermitCount > 0 ? stats.PermitCount.ToString("N0") : "Available")</span>
+                <span class="location-stat-label">Permits in County</span>
+            </div>
+            <div class="location-stat-card">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span class="location-stat-num">@(stats.DisasterCount > 0 ? stats.DisasterCount.ToString() : "Check")</span>
+                <span class="location-stat-label">FEMA Disasters</span>
+            </div>
+            <div class="location-stat-card">
+                <i class="fas fa-hard-hat"></i>
+                <span class="location-stat-num">@(stats.OldRoofCount > 0 ? stats.OldRoofCount.ToString("N0") : "Search")</span>
+                <span class="location-stat-label">Aging Roofs in County</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="location-content-section">
+    <div class="section-inner">
+        <div class="location-content-grid">
+            <div class="location-content-main">
+                <h2>Property & Roofing Data for @cityName, FL</h2>
+                <p>
+                    Find roofing opportunities in @cityName, Florida with our comprehensive property intelligence
+                    platform. We aggregate data from FDOT, FEMA, and other official government sources to help
+                    roofing contractors and public adjusters identify properties that need roofing services in
+                    @cityName and the surrounding @countyName County area.
+                </p>
+
+                <h3>Roofing Services Data for @cityName</h3>
+                <ul class="feature-list">
+                    <li><i class="fas fa-check"></i> Search @cityName properties by address or owner name</li>
+                    <li><i class="fas fa-check"></i> View building permits and identify recent roofing work</li>
+                    <li><i class="fas fa-check"></i> Check FEMA flood zones for any @cityName address</li>
+                    <li><i class="fas fa-check"></i> Assess wildfire and storm damage risk</li>
+                    <li><i class="fas fa-check"></i> Find properties with roofs over 15 years old</li>
+                    <li><i class="fas fa-check"></i> Track FEMA disaster declarations for @countyName County</li>
+                </ul>
+
+                <h3>Why @cityName for Roofing Professionals?</h3>
+                <p>
+                    @cityName is part of @countyName County, one of Florida's active markets for roofing and
+                    property restoration. With Florida's hurricane season, heavy storms, and year-round UV exposure,
+                    @cityName property owners regularly need roof inspections, repairs, and replacements.
+                    Our platform helps you find these opportunities using real public data.
+                </p>
+            </div>
+
+            <aside class="location-sidebar">
+                <div class="sidebar-card">
+                    <h4><i class="fas fa-map-marker-alt"></i> @cityName, FL Quick Facts</h4>
+                    <ul class="data-list">
+                        <li><strong>County:</strong> @countyName</li>
+                        <li><strong>State:</strong> Florida</li>
+                        <li><strong>Data Source:</strong> FDOT Parcels</li>
+                        <li><strong>Flood Data:</strong> FEMA NFHL</li>
+                        <li><strong>Fire Risk:</strong> NIFC / IRWIN</li>
+                    </ul>
+                </div>
+
+                @{
+                    var siblCities = LandingPageService.FloridaCities
+                        .Where(c => c.Value.County.Equals(countyName, StringComparison.OrdinalIgnoreCase) && c.Key != citySlug)
+                        .ToList();
+                }
+
+                @if (siblCities.Any())
+                {
+                    <div class="sidebar-card">
+                        <h4><i class="fas fa-city"></i> Nearby Cities</h4>
+                        <ul class="city-list">
+                            @foreach (var city in siblCities)
+                            {
+                                <li><a href="/florida/@countySlug/@city.Key">@city.Value.City</a></li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="sidebar-card">
+                    <h4><i class="fas fa-map"></i> More in @countyName County</h4>
+                    <p style="margin-bottom:0.75rem;"><a href="/florida/@countySlug">View all @countyName County data</a></p>
+                </div>
+
+                <div class="sidebar-card sidebar-cta">
+                    <h4>Ready to Find Leads?</h4>
+                    <p>Search @cityName properties with real government data.</p>
+                    <a href="/account/register" class="hero-btn-primary" style="width:100%;text-align:center;">Get Started Free</a>
+                </div>
+            </aside>
+        </div>
+    </div>
+</section>
