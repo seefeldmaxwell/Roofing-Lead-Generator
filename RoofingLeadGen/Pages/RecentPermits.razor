@@ -4,7 +4,7 @@
 <div class="permits-page">
     <div class="page-header">
         <h2><i class="fas fa-file-alt"></i> Recent Permits</h2>
-        <p>Latest roofing and building permits filed across Florida</p>
+        <p>Latest roofing and building permits filed across Florida. Work categories are auto-classified from permit type and scope.</p>
     </div>
 
     @if (_loading)
@@ -23,7 +23,9 @@
                         <tr>
                             <th>Permit #</th>
                             <th>Property</th>
+                            <th>Work Category</th>
                             <th>Type</th>
+                            <th>Description</th>
                             <th>Issued</th>
                             <th>Status</th>
                             <th>Contractor</th>
@@ -46,10 +48,17 @@
                                     }
                                 </td>
                                 <td>
+                                    <span class="badge @GetCategoryBadge(permit.WorkCategory)">
+                                        <i class="fas @GetCategoryIcon(permit.WorkCategory)" style="font-size:0.65rem;"></i>
+                                        @(string.IsNullOrEmpty(permit.WorkCategory) ? "Unclassified" : permit.WorkCategory)
+                                    </span>
+                                </td>
+                                <td>
                                     <span class="badge @(permit.IsRoofingPermit ? "badge-warning" : "badge-secondary")">
                                         @permit.PermitType
                                     </span>
                                 </td>
+                                <td class="description-cell">@permit.Description</td>
                                 <td>@(permit.IssuedDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
                                 <td>
                                     <span class="badge @GetStatusBadge(permit.Status)">@permit.Status</span>
@@ -86,5 +95,40 @@
         "Approved" or "In Progress" => "badge-info",
         "Expired" => "badge-danger",
         _ => "badge-secondary"
+    };
+
+    private string GetCategoryBadge(string? category) => category switch
+    {
+        "Roofing" => "badge-warning",
+        "Electrical" => "badge-info",
+        "Plumbing" => "badge-info",
+        "HVAC" => "badge-secondary",
+        "Structural" or "Foundation" => "badge-danger",
+        "Windows/Doors" or "Siding/Exterior" => "badge-success",
+        "Solar" => "badge-success",
+        "Interior Remodel" => "badge-secondary",
+        "Demolition" => "badge-danger",
+        "Fire Alarm" => "badge-danger",
+        _ => "badge-secondary"
+    };
+
+    private string GetCategoryIcon(string? category) => category switch
+    {
+        "Roofing" => "fa-home",
+        "Electrical" => "fa-bolt",
+        "Plumbing" => "fa-faucet",
+        "HVAC" => "fa-fan",
+        "Structural" => "fa-drafting-compass",
+        "Windows/Doors" => "fa-door-open",
+        "Siding/Exterior" => "fa-paint-roller",
+        "Foundation" => "fa-layer-group",
+        "Solar" => "fa-solar-panel",
+        "Pool" => "fa-swimming-pool",
+        "Fence" => "fa-border-all",
+        "Fire Alarm" => "fa-bell",
+        "Demolition" => "fa-hammer",
+        "Interior Remodel" => "fa-couch",
+        "General Building" => "fa-building",
+        _ => "fa-tools"
     };
 }

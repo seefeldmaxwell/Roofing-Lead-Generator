@@ -40,6 +40,9 @@ public class SearchResult
 
     // Data source
     public string? DataSource { get; set; }
+
+    // Work categories found in permits
+    public List<string> WorkCategories { get; set; } = new();
 }
 
 public class SearchRequest

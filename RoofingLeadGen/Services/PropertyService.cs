@@ -139,10 +139,23 @@ public class PropertyService
             .Include(p => p.FireIncidents.OrderByDescending(f => f.DiscoveryDate))
             .FirstOrDefaultAsync(p => p.Id == id);
 
-        if (property != null && string.IsNullOrEmpty(property.FloodZone) &&
-            property.Latitude.HasValue && property.Longitude.HasValue)
+        if (property != null)
         {
-            await EnrichWithFloodDataAsync(property);
+            // Enrich with flood data if not already done
+            if (string.IsNullOrEmpty(property.FloodZone) &&
+                property.Latitude.HasValue && property.Longitude.HasValue)
+            {
+                await EnrichWithFloodDataAsync(property);
+            }
+
+            // Fetch permits from public data if none exist yet
+            if (!property.Permits.Any())
+            {
+                await FetchAndCachePermitsAsync(property);
+            }
+
+            // Recalculate roof age from permits and update stored value
+            RecalculateRoofAge(property);
         }
 
         return property;
@@ -158,7 +171,7 @@ public class PropertyService
             TotalProperties = properties.Count,
             TotalOwners = await _context.Owners.CountAsync(),
             TotalPermits = await _context.Permits.CountAsync(),
-            RoofsOver15Years = properties.Count(p => p.RoofAge.HasValue && p.RoofAge > 15),
+            RoofsOver15Years = properties.Count(p => (p.CalculatedRoofAge ?? 0) > 15),
             RecentPermits30Days = await _context.Permits
                 .CountAsync(p => p.IssuedDate.HasValue && p.IssuedDate > DateTime.Now.AddDays(-30)),
             PropertiesInFloodZone = properties.Count(p => p.IsInFloodZone),
@@ -170,17 +183,17 @@ public class PropertyService
             CountyBreakdowns = properties.GroupBy(p => p.County).Select(g => new CountyBreakdown
             {
                 County = g.Key, PropertyCount = g.Count(),
-                OldRoofCount = g.Count(p => p.RoofAge.HasValue && p.RoofAge > 15),
+                OldRoofCount = g.Count(p => (p.CalculatedRoofAge ?? 0) > 15),
                 FloodZoneCount = g.Count(p => p.IsInFloodZone),
                 HighFireRiskCount = g.Count(p => p.WildfireRiskScore > 50),
             }).OrderByDescending(c => c.PropertyCount).ToList(),
             RoofAgeDistributions = new List<RoofAgeDistribution>
             {
-                new() { Range = "0-5 years", Count = properties.Count(p => p.RoofAge is >= 0 and <= 5) },
-                new() { Range = "6-10 years", Count = properties.Count(p => p.RoofAge is >= 6 and <= 10) },
-                new() { Range = "11-15 years", Count = properties.Count(p => p.RoofAge is >= 11 and <= 15) },
-                new() { Range = "16-20 years", Count = properties.Count(p => p.RoofAge is >= 16 and <= 20) },
-                new() { Range = "20+ years", Count = properties.Count(p => p.RoofAge > 20) },
+                new() { Range = "0-5 years", Count = properties.Count(p => p.CalculatedRoofAge is >= 0 and <= 5) },
+                new() { Range = "6-10 years", Count = properties.Count(p => p.CalculatedRoofAge is >= 6 and <= 10) },
+                new() { Range = "11-15 years", Count = properties.Count(p => p.CalculatedRoofAge is >= 11 and <= 15) },
+                new() { Range = "16-20 years", Count = properties.Count(p => p.CalculatedRoofAge is >= 16 and <= 20) },
+                new() { Range = "20+ years", Count = properties.Count(p => p.CalculatedRoofAge > 20) },
             },
         };
     }
@@ -206,6 +219,97 @@ public class PropertyService
         return await _context.FemaDisasters.OrderByDescending(d => d.DeclarationDate).Take(count).ToListAsync();
     }
 
+    /// <summary>
+    /// Fetch and cache permits for a property from available public APIs.
+    /// Pulls from Miami-Dade Open Data for Miami-Dade county properties.
+    /// Classifies each permit into a work category.
+    /// </summary>
+    private async Task FetchAndCachePermitsAsync(Property property)
+    {
+        try
+        {
+            List<PermitRecord> permitRecords = new();
+
+            // Miami-Dade permits (most comprehensive FL county permit data)
+            if (property.County.Equals("MIAMI-DADE", StringComparison.OrdinalIgnoreCase) ||
+                property.County.Equals("Miami-Dade", StringComparison.OrdinalIgnoreCase))
+            {
+                permitRecords = await _propertyClient.GetMiamiDadePermitsAsync(property.Address);
+            }
+
+            // TODO: Add more county permit APIs as they become available
+            // Broward, Palm Beach, Hillsborough, Orange, etc.
+
+            if (permitRecords.Count == 0) return;
+
+            foreach (var record in permitRecords)
+            {
+                // Skip if we already have this permit
+                if (await _context.Permits.AnyAsync(p => p.PermitNumber == record.PermitNumber))
+                    continue;
+
+                var (workCategory, isRoofing) = Permit.ClassifyPermit(record.PermitType, record.Description);
+
+                _context.Permits.Add(new Permit
+                {
+                    PermitNumber = record.PermitNumber,
+                    PermitType = record.PermitType,
+                    WorkCategory = workCategory,
+                    Description = record.Description,
+                    IssuedDate = record.IssuedDate,
+                    Status = record.Status,
+                    ContractorName = record.ContractorName,
+                    ContractorLicense = record.ContractorLicense,
+                    EstimatedCost = record.EstimatedCost.HasValue ? (decimal)record.EstimatedCost.Value : null,
+                    IsRoofingPermit = isRoofing,
+                    DataSource = "Miami-Dade Open Data",
+                    PropertyId = property.Id,
+                });
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Reload permits into the property's navigation collection
+            await _context.Entry(property).Collection(p => p.Permits).LoadAsync();
+
+            _logger.LogInformation("Cached {Count} permits for property {Id} at {Address}",
+                permitRecords.Count, property.Id, property.Address);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to fetch permits for property {Id}", property.Id);
+        }
+    }
+
+    /// <summary>
+    /// Recalculates roof age from permit data and updates the stored RoofAge + LastRoofPermitDate
+    /// so filters and dashboards stay accurate.
+    /// </summary>
+    private void RecalculateRoofAge(Property property)
+    {
+        var calculatedAge = property.CalculatedRoofAge;
+        var effectiveDate = property.EffectiveLastRoofPermitDate;
+
+        bool changed = false;
+
+        if (calculatedAge.HasValue && property.RoofAge != calculatedAge.Value)
+        {
+            property.RoofAge = calculatedAge.Value;
+            changed = true;
+        }
+
+        if (effectiveDate.HasValue && property.LastRoofPermitDate != effectiveDate.Value)
+        {
+            property.LastRoofPermitDate = effectiveDate.Value;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            _context.SaveChanges();
+        }
+    }
+
     private async Task FetchAndCacheFromLiveApiAsync(string query, string? county)
     {
         try
@@ -220,7 +324,10 @@ public class PropertyService
                 var owner = await CreateOrGetOwnerAsync(record);
                 var riskScore = _fireClient.CalculateWildfireRiskScore(record.Latitude, record.Longitude, record.County);
 
-                _context.Properties.Add(new Property
+                // Calculate initial roof age from YearBuilt if available
+                int? initialRoofAge = record.YearBuilt.HasValue ? DateTime.Now.Year - record.YearBuilt.Value : null;
+
+                var property = new Property
                 {
                     Address = record.Address, City = record.City, ZipCode = record.ZipCode,
                     County = record.County, ParcelId = record.ParcelId, YearBuilt = record.YearBuilt,
@@ -228,8 +335,11 @@ public class PropertyService
                     Latitude = record.Latitude, Longitude = record.Longitude,
                     DataSource = record.DataSource, LastDataRefresh = DateTime.UtcNow,
                     OwnerId = owner?.Id, WildfireRiskScore = riskScore,
+                    RoofAge = initialRoofAge,
                     FireRiskLevel = riskScore <= 20 ? "Low" : riskScore <= 40 ? "Moderate" : riskScore <= 60 ? "High" : "Very High",
-                });
+                };
+
+                _context.Properties.Add(property);
             }
             await _context.SaveChangesAsync();
         }
@@ -252,6 +362,8 @@ public class PropertyService
                 var owner = await CreateOrGetOwnerAsync(record);
                 var riskScore = _fireClient.CalculateWildfireRiskScore(record.Latitude, record.Longitude, record.County);
 
+                int? initialRoofAge = record.YearBuilt.HasValue ? DateTime.Now.Year - record.YearBuilt.Value : null;
+
                 _context.Properties.Add(new Property
                 {
                     Address = record.Address, City = record.City, ZipCode = record.ZipCode,
@@ -260,6 +372,7 @@ public class PropertyService
                     Latitude = record.Latitude, Longitude = record.Longitude,
                     DataSource = record.DataSource, LastDataRefresh = DateTime.UtcNow,
                     OwnerId = owner?.Id, WildfireRiskScore = riskScore,
+                    RoofAge = initialRoofAge,
                     FireRiskLevel = riskScore <= 20 ? "Low" : riskScore <= 40 ? "Moderate" : riskScore <= 60 ? "High" : "Very High",
                 });
             }
@@ -335,8 +448,26 @@ public class PropertyService
 
     private static SearchResult MapToSearchResult(Property p)
     {
+        // Compute roof age from permits first, fall back to stored values
         var lastRoofPermit = p.Permits.Where(permit => permit.IsRoofingPermit)
             .OrderByDescending(permit => permit.IssuedDate).FirstOrDefault();
+
+        int? roofAge = null;
+        DateTime? lastRoofDate = lastRoofPermit?.IssuedDate ?? p.LastRoofPermitDate;
+
+        if (lastRoofDate.HasValue)
+            roofAge = (int)((DateTime.Now - lastRoofDate.Value).TotalDays / 365.25);
+        else if (p.RoofAge.HasValue)
+            roofAge = p.RoofAge;
+        else if (p.YearBuilt.HasValue)
+            roofAge = DateTime.Now.Year - p.YearBuilt.Value;
+
+        // Build work categories summary
+        var workCategories = p.Permits
+            .Where(permit => !string.IsNullOrEmpty(permit.WorkCategory))
+            .Select(permit => permit.WorkCategory)
+            .Distinct()
+            .ToList();
 
         return new SearchResult
         {
@@ -344,7 +475,7 @@ public class PropertyService
             County = p.County, OwnerName = p.Owner?.FullName ?? "Unknown",
             PhoneNumber = p.Owner?.PhoneNumber, Email = p.Owner?.Email, OwnerAge = p.Owner?.Age,
             PropertyType = p.PropertyType, YearBuilt = p.YearBuilt, RoofType = p.RoofType,
-            RoofAge = p.RoofAge, LastRoofPermitDate = lastRoofPermit?.IssuedDate ?? p.LastRoofPermitDate,
+            RoofAge = roofAge, LastRoofPermitDate = lastRoofDate,
             LastPermitStatus = lastRoofPermit?.Status, TotalPermits = p.Permits.Count,
             EstimatedValue = p.EstimatedValue, FloodZone = p.FloodZone,
             IsInHighRiskFloodZone = p.IsInHighRiskFloodZone, RequiresFloodInsurance = p.RequiresFloodInsurance,
@@ -353,6 +484,7 @@ public class PropertyService
             HasOpenClaim = p.InsuranceClaims.Any(c => c.Status == "Open" || c.Status == "In Progress"),
             OverallRiskScore = p.OverallRiskScore, LeadPriority = p.LeadPriority,
             DataSource = p.DataSource,
+            WorkCategories = workCategories,
         };
     }
 }

@@ -33,8 +33,8 @@
                 </div>
                 <div class="detail-badges">
                     <span class="badge badge-info">@_property.PropertyType</span>
-                    <span class="badge @(_property.RoofAge >= 15 ? "badge-danger" : "badge-success")">
-                        Roof: @(_property.RoofAge?.ToString() ?? "N/A") years
+                    <span class="badge @((_property.CalculatedRoofAge ?? 0) >= 15 ? "badge-danger" : "badge-success")">
+                        Roof: @(_property.CalculatedRoofAge?.ToString() ?? "N/A") years
                     </span>
                     @if (!string.IsNullOrEmpty(_property.LeadPriority))
                     {
@@ -90,14 +90,22 @@
                             <span class="info-value">@(_property.RoofType ?? "N/A")</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">Roof Age</span>
-                            <span class="info-value @(_property.RoofAge >= 15 ? "text-danger" : "")">
-                                @(_property.RoofAge?.ToString() ?? "N/A") years
+                            <span class="info-label">Roof Age (Calculated)</span>
+                            <span class="info-value @((_property.CalculatedRoofAge ?? 0) >= 15 ? "text-danger" : "")">
+                                @(_property.CalculatedRoofAge?.ToString() ?? "N/A") years
+                                @if (_property.EffectiveLastRoofPermitDate.HasValue)
+                                {
+                                    <small class="text-muted"> (from permit)</small>
+                                }
+                                else if (_property.YearBuilt.HasValue)
+                                {
+                                    <small class="text-muted"> (from year built)</small>
+                                }
                             </span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Last Roof Permit</span>
-                            <span class="info-value">@(_property.LastRoofPermitDate?.ToString("MM/dd/yyyy") ?? "No record")</span>
+                            <span class="info-value">@(_property.EffectiveLastRoofPermitDate?.ToString("MM/dd/yyyy") ?? "No record")</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">Data Source</span>
@@ -392,6 +400,71 @@
             </div>
         }
 
+        <!-- Work History Summary (derived from permits) -->
+        @if (_property.WorkHistory.Any())
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-hard-hat"></i> Work History Summary</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted" style="margin-bottom: 1rem;">
+                        <small>Work categories automatically classified from @_property.Permits.Count pulled permits.</small>
+                    </p>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Work Type</th>
+                                <th>Permits</th>
+                                <th>First Done</th>
+                                <th>Last Done</th>
+                                <th>Years Since</th>
+                                <th>Total Cost</th>
+                                <th>Last Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var work in _property.WorkHistory)
+                            {
+                                <tr class="@(work.WorkCategory == "Roofing" ? "row-roofing" : "")">
+                                    <td>
+                                        <span class="badge @GetWorkCategoryBadge(work.WorkCategory)">
+                                            <i class="fas @GetWorkCategoryIcon(work.WorkCategory)"></i>
+                                            @work.WorkCategory
+                                        </span>
+                                    </td>
+                                    <td><strong>@work.TotalPermits</strong></td>
+                                    <td>@(work.FirstPermitDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                    <td>@(work.LastPermitDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                    <td>
+                                        @if (work.YearsSinceLastWork.HasValue)
+                                        {
+                                            <span class="@(work.YearsSinceLastWork >= 15 ? "text-danger" : "")">
+                                                <strong>@work.YearsSinceLastWork</strong> yrs ago
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">N/A</span>
+                                        }
+                                    </td>
+                                    <td>@(work.TotalEstimatedCost > 0 ? work.TotalEstimatedCost.ToString("C0") : "N/A")</td>
+                                    <td>
+                                        <span class="badge @GetStatusBadge(work.MostRecentStatus ?? "")">
+                                            @(work.MostRecentStatus ?? "N/A")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="data-source-note">
+                        <small><i class="fas fa-info-circle"></i> Roof age is calculated from the most recent roofing permit date. Work categories are auto-classified from permit type and scope of work descriptions.</small>
+                    </div>
+                </div>
+            </div>
+        }
+
         <!-- Permit History -->
         <div class="card permits-card">
             <div class="card-header">
@@ -400,6 +473,13 @@
                     <button class="filter-btn @(_showRoofingOnly ? "active" : "")" @onclick="ToggleRoofingFilter">
                         <i class="fas fa-filter"></i> Roofing Only
                     </button>
+                    <select class="filter-select" style="font-size:0.8rem;min-width:120px;padding:0.3rem 0.5rem;" @bind="_categoryFilter">
+                        <option value="">All Categories</option>
+                        @foreach (var cat in PermitCategories)
+                        {
+                            <option value="@cat">@cat</option>
+                        }
+                    </select>
                 </div>
             </div>
             <div class="card-body">
@@ -407,6 +487,7 @@
                     <thead>
                         <tr>
                             <th>Permit #</th>
+                            <th>Category</th>
                             <th>Type</th>
                             <th>Description</th>
                             <th>Issued</th>
@@ -421,6 +502,12 @@
                         {
                             <tr class="@(permit.IsRoofingPermit ? "row-roofing" : "")">
                                 <td><strong>@permit.PermitNumber</strong></td>
+                                <td>
+                                    <span class="badge @GetWorkCategoryBadge(permit.WorkCategory)">
+                                        <i class="fas @GetWorkCategoryIcon(permit.WorkCategory)" style="font-size:0.65rem;"></i>
+                                        @(string.IsNullOrEmpty(permit.WorkCategory) ? "Unclassified" : permit.WorkCategory)
+                                    </span>
+                                </td>
                                 <td>
                                     <span class="badge @(permit.IsRoofingPermit ? "badge-warning" : "badge-secondary")">
                                         @permit.PermitType
@@ -456,11 +543,30 @@
     private Property? _property;
     private bool _loading = true;
     private bool _showRoofingOnly;
+    private string _categoryFilter = "";
 
-    private IEnumerable<Permit> FilteredPermits =>
-        _showRoofingOnly
-            ? _property?.Permits.Where(p => p.IsRoofingPermit) ?? Enumerable.Empty<Permit>()
-            : _property?.Permits ?? Enumerable.Empty<Permit>();
+    private IEnumerable<string> PermitCategories =>
+        _property?.Permits
+            .Select(p => p.WorkCategory)
+            .Where(c => !string.IsNullOrEmpty(c))
+            .Distinct()
+            .OrderBy(c => c) ?? Enumerable.Empty<string>();
+
+    private IEnumerable<Permit> FilteredPermits
+    {
+        get
+        {
+            var permits = _property?.Permits ?? Enumerable.Empty<Permit>();
+
+            if (_showRoofingOnly)
+                permits = permits.Where(p => p.IsRoofingPermit);
+
+            if (!string.IsNullOrEmpty(_categoryFilter))
+                permits = permits.Where(p => p.WorkCategory == _categoryFilter);
+
+            return permits;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -503,5 +609,40 @@
         "moderate" or "medium" => "badge-warning",
         "low" => "badge-success",
         _ => "badge-secondary"
+    };
+
+    private string GetWorkCategoryBadge(string? category) => category switch
+    {
+        "Roofing" => "badge-warning",
+        "Electrical" => "badge-info",
+        "Plumbing" => "badge-info",
+        "HVAC" => "badge-secondary",
+        "Structural" or "Foundation" => "badge-danger",
+        "Windows/Doors" or "Siding/Exterior" => "badge-success",
+        "Solar" => "badge-success",
+        "Interior Remodel" => "badge-secondary",
+        "Demolition" => "badge-danger",
+        "Fire Alarm" => "badge-danger",
+        _ => "badge-secondary"
+    };
+
+    private string GetWorkCategoryIcon(string? category) => category switch
+    {
+        "Roofing" => "fa-home",
+        "Electrical" => "fa-bolt",
+        "Plumbing" => "fa-faucet",
+        "HVAC" => "fa-fan",
+        "Structural" => "fa-drafting-compass",
+        "Windows/Doors" => "fa-door-open",
+        "Siding/Exterior" => "fa-paint-roller",
+        "Foundation" => "fa-layer-group",
+        "Solar" => "fa-solar-panel",
+        "Pool" => "fa-swimming-pool",
+        "Fence" => "fa-border-all",
+        "Fire Alarm" => "fa-bell",
+        "Demolition" => "fa-hammer",
+        "Interior Remodel" => "fa-couch",
+        "General Building" => "fa-building",
+        _ => "fa-tools"
     };
 }
