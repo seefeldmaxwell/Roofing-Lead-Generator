@@ -185,7 +185,7 @@
                                 }
                             </td>
                             <td>
-                                <span class="badge @GetRiskScoreBadge(result.OverallRiskScore)">
+                                <span class="badge @GetRiskScoreBadge(result.OverallRiskScore ?? 0)">
                                     @result.OverallRiskScore/100
                                 </span>
                             </td>

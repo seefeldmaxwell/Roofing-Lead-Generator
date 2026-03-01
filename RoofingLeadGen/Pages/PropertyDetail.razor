@@ -44,7 +44,7 @@
                     }
                     @if (_property.OverallRiskScore > 0)
                     {
-                        <span class="badge @GetRiskScoreBadge(_property.OverallRiskScore)">
+                        <span class="badge @GetRiskScoreBadge(_property.OverallRiskScore ?? 0)">
                             Risk: @_property.OverallRiskScore/100
                         </span>
                     }
@@ -263,7 +263,7 @@
                         <div class="info-item">
                             <span class="info-label">Wildfire Risk Score</span>
                             <span class="info-value">
-                                <span class="badge @GetRiskScoreBadge(_property.WildfireRiskScore)">
+                                <span class="badge @GetRiskScoreBadge(_property.WildfireRiskScore ?? 0)">
                                     @_property.WildfireRiskScore / 100
                                 </span>
                             </span>
@@ -391,7 +391,7 @@
                                             <span class="text-muted">None</span>
                                         }
                                     </td>
-                                    <td><small>@incident.DataSource</small></td>
+                                    <td><small>@incident.Source</small></td>
                                 </tr>
                             }
                         </tbody>
