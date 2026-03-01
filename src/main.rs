@@ -77,7 +77,8 @@ async fn main() {
         .route("/account/external-login", get(routes::auth::external_login))
         .route("/account/callback/google", get(routes::auth::oauth_callback_google))
         .route("/account/callback/microsoft", get(routes::auth::oauth_callback_microsoft))
-        .route("/account/logout", get(routes::auth::logout));
+        .route("/account/logout", get(routes::auth::logout))
+        .route("/account/dummy-login", get(routes::auth::dummy_login));
 
     let app = Router::new()
         .nest("/app", app_routes)

@@ -384,6 +384,23 @@ pub async fn oauth_callback_microsoft(
     }
 }
 
+/// GET /account/dummy-login — bypass OAuth with a demo account (dev only)
+pub async fn dummy_login(
+    State(state): State<Arc<AppState>>,
+    jar: CookieJar,
+) -> impl IntoResponse {
+    match create_user_session(&state.db, "demo@test.com", "Demo User", "dummy").await {
+        Ok(session_cookie) => {
+            let jar = jar.add(session_cookie);
+            (jar, Redirect::to("/app/dashboard")).into_response()
+        }
+        Err(e) => {
+            tracing::error!("DB error during dummy login: {:?}", e);
+            (jar, Redirect::to("/account/login?error=db")).into_response()
+        }
+    }
+}
+
 /// POST /account/logout
 pub async fn logout(jar: CookieJar) -> impl IntoResponse {
     let jar = jar.remove(Cookie::from("session_id"));
