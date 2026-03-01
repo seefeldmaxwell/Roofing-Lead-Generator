@@ -1,0 +1,90 @@
+@page "/permits"
+@inject PermitService PermitService
+
+<div class="permits-page">
+    <div class="page-header">
+        <h2><i class="fas fa-file-alt"></i> Recent Permits</h2>
+        <p>Latest roofing and building permits filed across Florida</p>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Loading recent permits...</span>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Permit #</th>
+                            <th>Property</th>
+                            <th>Type</th>
+                            <th>Issued</th>
+                            <th>Status</th>
+                            <th>Contractor</th>
+                            <th>Est. Cost</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var permit in _permits)
+                        {
+                            <tr class="@(permit.IsRoofingPermit ? "row-roofing" : "")">
+                                <td><strong>@permit.PermitNumber</strong></td>
+                                <td>
+                                    @if (permit.Property != null)
+                                    {
+                                        <div class="address-cell">
+                                            <strong>@permit.Property.Address</strong>
+                                            <small>@permit.Property.City, FL</small>
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @(permit.IsRoofingPermit ? "badge-warning" : "badge-secondary")">
+                                        @permit.PermitType
+                                    </span>
+                                </td>
+                                <td>@(permit.IssuedDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                <td>
+                                    <span class="badge @GetStatusBadge(permit.Status)">@permit.Status</span>
+                                </td>
+                                <td><small>@permit.ContractorName</small></td>
+                                <td>@(permit.EstimatedCost?.ToString("C0") ?? "N/A")</td>
+                                <td>
+                                    <a href="/property/@permit.PropertyId" class="btn-view">
+                                        <i class="fas fa-eye"></i> View Property
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<Permit> _permits = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _permits = await PermitService.GetRecentPermitsAsync(365);
+        _loading = false;
+    }
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Completed" or "Final" => "badge-success",
+        "Approved" or "In Progress" => "badge-info",
+        "Expired" => "badge-danger",
+        _ => "badge-secondary"
+    };
+}

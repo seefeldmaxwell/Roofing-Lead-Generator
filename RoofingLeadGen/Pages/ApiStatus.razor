@@ -1,0 +1,133 @@
+@page "/api-status"
+
+<div class="api-status-page">
+    <div class="page-header">
+        <h2><i class="fas fa-code"></i> API Status & Upcoming Features</h2>
+        <p>Current API endpoints and upcoming features for the Florida Property & Permit Tracker</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-check-circle" style="color: var(--success);"></i> Live API Endpoints</h3>
+        </div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Endpoint</th>
+                        <th>Method</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Property Search (Address)</strong></td>
+                        <td><code>/api/properties/search?mode=address&q=...</code></td>
+                        <td><span class="badge badge-info">GET</span></td>
+                        <td><span class="badge badge-success">Live</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Property Search (Owner)</strong></td>
+                        <td><code>/api/properties/search?mode=owner&q=...</code></td>
+                        <td><span class="badge badge-info">GET</span></td>
+                        <td><span class="badge badge-success">Live</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Property Details</strong></td>
+                        <td><code>/api/properties/{"{id}"}</code></td>
+                        <td><span class="badge badge-info">GET</span></td>
+                        <td><span class="badge badge-success">Live</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Permit History</strong></td>
+                        <td><code>/api/properties/{"{id}"}/permits</code></td>
+                        <td><span class="badge badge-info">GET</span></td>
+                        <td><span class="badge badge-success">Live</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dashboard Statistics</strong></td>
+                        <td><code>/api/properties/stats</code></td>
+                        <td><span class="badge badge-info">GET</span></td>
+                        <td><span class="badge badge-success">Live</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>API Feature List</strong></td>
+                        <td><code>/api/v2/features</code></td>
+                        <td><span class="badge badge-info">GET</span></td>
+                        <td><span class="badge badge-success">Live</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card coming-soon-card">
+        <div class="card-header">
+            <h3><i class="fas fa-rocket" style="color: var(--accent-teal);"></i> Coming Soon</h3>
+        </div>
+        <div class="card-body">
+            <div class="coming-soon-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-bell"></i></div>
+                    <h4>Real-Time Permit Webhooks</h4>
+                    <p>Subscribe to real-time notifications when new roofing permits are filed in your target areas.</p>
+                    <div class="feature-meta">
+                        <span class="badge badge-coming-soon">Q3 2026</span>
+                        <code>POST /api/v2/webhooks/permits</code>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-file-csv"></i></div>
+                    <h4>Batch Property Lookup</h4>
+                    <p>Upload a CSV of addresses to get bulk property and permit data in one request.</p>
+                    <div class="feature-meta">
+                        <span class="badge badge-coming-soon">Q3 2026</span>
+                        <code>POST /api/v2/properties/batch</code>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-brain"></i></div>
+                    <h4>AI Lead Scoring</h4>
+                    <p>Get intelligent lead scores based on roof age, storm history, property value, and owner demographics.</p>
+                    <div class="feature-meta">
+                        <span class="badge badge-coming-soon">Q4 2026</span>
+                        <code>GET /api/v2/leads/score</code>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-cloud-showers-heavy"></i></div>
+                    <h4>Storm Damage Assessment</h4>
+                    <p>Access historical storm data and cross-reference with property locations to identify potential roof damage.</p>
+                    <div class="feature-meta">
+                        <span class="badge badge-coming-soon">Q4 2026</span>
+                        <code>GET /api/v2/weather/storm-history</code>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-mail-bulk"></i></div>
+                    <h4>Automated Outreach Campaigns</h4>
+                    <p>Create targeted mail and email campaigns for homeowners with aging roofs in specific regions.</p>
+                    <div class="feature-meta">
+                        <span class="badge badge-coming-soon">Q1 2027</span>
+                        <code>POST /api/v2/campaigns</code>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-satellite"></i></div>
+                    <h4>Satellite Roof Analysis</h4>
+                    <p>AI-powered analysis of satellite imagery to assess roof condition, material type, and estimated remaining lifespan.</p>
+                    <div class="feature-meta">
+                        <span class="badge badge-coming-soon">Q1 2027</span>
+                        <code>GET /api/v2/properties/{"{id}"}/aerial</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

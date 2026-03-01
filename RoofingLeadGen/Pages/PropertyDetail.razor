@@ -1,0 +1,238 @@
+@page "/property/{Id:int}"
+@inject PropertyService PropertyService
+@inject PermitService PermitService
+
+<div class="property-detail">
+    @if (_loading)
+    {
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Loading property details...</span>
+        </div>
+    }
+    else if (_property == null)
+    {
+        <div class="no-results">
+            <i class="fas fa-exclamation-circle"></i>
+            <h3>Property Not Found</h3>
+            <p>The property you're looking for could not be found.</p>
+            <a href="/search" class="btn-primary">Back to Search</a>
+        </div>
+    }
+    else
+    {
+        <div class="detail-breadcrumb">
+            <a href="/search"><i class="fas fa-arrow-left"></i> Back to Search</a>
+        </div>
+
+        <div class="detail-header-card">
+            <div class="detail-header-content">
+                <div class="detail-address">
+                    <h2><i class="fas fa-map-marker-alt"></i> @_property.Address</h2>
+                    <p>@_property.City, @_property.State @_property.ZipCode &bull; @_property.County County</p>
+                </div>
+                <div class="detail-badges">
+                    <span class="badge badge-info">@_property.PropertyType</span>
+                    <span class="badge @(_property.RoofAge >= 15 ? "badge-danger" : "badge-success")">
+                        Roof: @(_property.RoofAge?.ToString() ?? "N/A") years
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-home"></i> Property Information</h3></div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Parcel ID</span>
+                            <span class="info-value">@_property.ParcelId</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Year Built</span>
+                            <span class="info-value">@(_property.YearBuilt?.ToString() ?? "N/A")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Square Footage</span>
+                            <span class="info-value">@(_property.SquareFootage?.ToString("N0") ?? "N/A") sq ft</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Lot Size</span>
+                            <span class="info-value">@(_property.LotSize?.ToString("N2") ?? "N/A") acres</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Bedrooms</span>
+                            <span class="info-value">@(_property.Bedrooms?.ToString() ?? "N/A")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Bathrooms</span>
+                            <span class="info-value">@(_property.Bathrooms?.ToString() ?? "N/A")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Estimated Value</span>
+                            <span class="info-value highlight">@(_property.EstimatedValue?.ToString("C0") ?? "N/A")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Roof Type</span>
+                            <span class="info-value">@(_property.RoofType ?? "N/A")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Roof Age</span>
+                            <span class="info-value @(_property.RoofAge >= 15 ? "text-danger" : "")">
+                                @(_property.RoofAge?.ToString() ?? "N/A") years
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Roof Permit</span>
+                            <span class="info-value">@(_property.LastRoofPermitDate?.ToString("MM/dd/yyyy") ?? "No record")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @if (_property.Owner != null)
+            {
+                <div class="card">
+                    <div class="card-header"><h3><i class="fas fa-user"></i> Owner Information</h3></div>
+                    <div class="card-body">
+                        <div class="owner-profile">
+                            <div class="owner-avatar">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="owner-details">
+                                <h4>@_property.Owner.FullName</h4>
+                                @if (_property.Owner.Age.HasValue)
+                                {
+                                    <span class="owner-age">Age: @_property.Owner.Age</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">Phone</span>
+                                <span class="info-value">
+                                    @if (!string.IsNullOrEmpty(_property.Owner.PhoneNumber))
+                                    {
+                                        <a href="tel:@_property.Owner.PhoneNumber" class="contact-link">
+                                            <i class="fas fa-phone"></i> @_property.Owner.PhoneNumber
+                                        </a>
+                                    }
+                                    else { <text>N/A</text> }
+                                </span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">Email</span>
+                                <span class="info-value">
+                                    @if (!string.IsNullOrEmpty(_property.Owner.Email))
+                                    {
+                                        <a href="mailto:@_property.Owner.Email" class="contact-link">
+                                            <i class="fas fa-envelope"></i> @_property.Owner.Email
+                                        </a>
+                                    }
+                                    else { <text>N/A</text> }
+                                </span>
+                            </div>
+                            <div class="info-item full-width">
+                                <span class="info-label">Mailing Address</span>
+                                <span class="info-value">
+                                    @(_property.Owner.MailingAddress ?? "N/A"),
+                                    @(_property.Owner.MailingCity ?? ""),
+                                    @(_property.Owner.MailingState ?? "")
+                                    @(_property.Owner.MailingZip ?? "")
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="card permits-card">
+            <div class="card-header">
+                <h3><i class="fas fa-file-alt"></i> Permit History (@_property.Permits.Count permits)</h3>
+                <div class="card-header-actions">
+                    <button class="filter-btn @(_showRoofingOnly ? "active" : "")" @onclick="ToggleRoofingFilter">
+                        <i class="fas fa-filter"></i> Roofing Only
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Permit #</th>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Issued</th>
+                            <th>Completed</th>
+                            <th>Status</th>
+                            <th>Contractor</th>
+                            <th>Est. Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var permit in FilteredPermits)
+                        {
+                            <tr class="@(permit.IsRoofingPermit ? "row-roofing" : "")">
+                                <td><strong>@permit.PermitNumber</strong></td>
+                                <td>
+                                    <span class="badge @(permit.IsRoofingPermit ? "badge-warning" : "badge-secondary")">
+                                        @permit.PermitType
+                                    </span>
+                                </td>
+                                <td class="description-cell">@permit.Description</td>
+                                <td>@(permit.IssuedDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                <td>@(permit.CompletedDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                <td>
+                                    <span class="badge @GetStatusBadge(permit.Status)">@permit.Status</span>
+                                </td>
+                                <td>
+                                    <small>@permit.ContractorName</small>
+                                    @if (!string.IsNullOrEmpty(permit.ContractorLicense))
+                                    {
+                                        <br/><small class="text-muted">Lic: @permit.ContractorLicense</small>
+                                    }
+                                </td>
+                                <td>@(permit.EstimatedCost?.ToString("C0") ?? "N/A")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    private Property? _property;
+    private bool _loading = true;
+    private bool _showRoofingOnly;
+
+    private IEnumerable<Permit> FilteredPermits =>
+        _showRoofingOnly
+            ? _property?.Permits.Where(p => p.IsRoofingPermit) ?? Enumerable.Empty<Permit>()
+            : _property?.Permits ?? Enumerable.Empty<Permit>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _property = await PropertyService.GetPropertyByIdAsync(Id);
+        _loading = false;
+    }
+
+    private void ToggleRoofingFilter()
+    {
+        _showRoofingOnly = !_showRoofingOnly;
+    }
+
+    private string GetStatusBadge(string status) => status switch
+    {
+        "Completed" or "Final" => "badge-success",
+        "Approved" or "In Progress" => "badge-info",
+        "Expired" => "badge-danger",
+        _ => "badge-secondary"
+    };
+}

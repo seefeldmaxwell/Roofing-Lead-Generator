@@ -1,0 +1,53 @@
+@inherits LayoutComponentBase
+
+<div class="app-container">
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <i class="fas fa-home"></i>
+                <span>FL Property<br/><small>Permit Tracker</small></span>
+            </div>
+        </div>
+        <ul class="nav-menu">
+            <li>
+                <NavLink href="/" Match="NavLinkMatch.All">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </NavLink>
+            </li>
+            <li>
+                <NavLink href="/search">
+                    <i class="fas fa-search"></i>
+                    <span>Property Search</span>
+                </NavLink>
+            </li>
+            <li>
+                <NavLink href="/permits">
+                    <i class="fas fa-file-alt"></i>
+                    <span>Recent Permits</span>
+                </NavLink>
+            </li>
+            <li>
+                <NavLink href="/api-status">
+                    <i class="fas fa-code"></i>
+                    <span>API Status</span>
+                </NavLink>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="env-badge">FLORIDA DATA</div>
+        </div>
+    </nav>
+
+    <main class="main-content">
+        <header class="top-header">
+            <div class="header-gradient">
+                <h1 class="header-title">Florida Property & Permit Tracker</h1>
+                <p class="header-subtitle">Real-time property owner data, roofing permits, and lead generation for the state of Florida</p>
+            </div>
+        </header>
+        <div class="content-area">
+            @Body
+        </div>
+    </main>
+</div>

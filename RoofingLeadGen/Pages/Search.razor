@@ -1,0 +1,294 @@
+@page "/search"
+@inject PropertyService PropertyService
+@inject NavigationManager Navigation
+
+<div class="search-page">
+    <div class="search-header-section">
+        <div class="search-mode-toggle">
+            <button class="mode-btn @(_searchMode == SearchMode.Address ? "active" : "")" @onclick="() => SetMode(SearchMode.Address)">
+                <i class="fas fa-map-marker-alt"></i> Search by Address
+            </button>
+            <button class="mode-btn @(_searchMode == SearchMode.Owner ? "active" : "")" @onclick="() => SetMode(SearchMode.Owner)">
+                <i class="fas fa-user"></i> Search by Owner
+            </button>
+        </div>
+
+        <div class="search-bar-container">
+            <div class="search-input-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text"
+                       class="search-input"
+                       placeholder="@(_searchMode == SearchMode.Address ? "Enter address, city, or zip code..." : "Enter owner name (first, last, or full name)...")"
+                       @bind="_searchQuery"
+                       @bind:event="oninput"
+                       @onkeypress="HandleKeyPress" />
+                @if (!string.IsNullOrEmpty(_searchQuery))
+                {
+                    <button class="clear-btn" @onclick="ClearSearch"><i class="fas fa-times"></i></button>
+                }
+            </div>
+            <button class="search-btn" @onclick="ExecuteSearch">
+                <i class="fas fa-search"></i> Search
+            </button>
+        </div>
+
+        <div class="filter-bar">
+            <div class="filter-group">
+                <label>County</label>
+                <select @bind="_selectedCounty" class="filter-select">
+                    <option value="">All Counties</option>
+                    @foreach (var county in _counties)
+                    {
+                        <option value="@county">@county</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Min Roof Age</label>
+                <input type="number" class="filter-input" placeholder="Min" @bind="_minRoofAge" min="0" max="50" />
+            </div>
+            <div class="filter-group">
+                <label>Max Roof Age</label>
+                <input type="number" class="filter-input" placeholder="Max" @bind="_maxRoofAge" min="0" max="50" />
+            </div>
+            <button class="filter-apply-btn" @onclick="ExecuteSearch">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+        </div>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Searching properties...</span>
+        </div>
+    }
+    else if (_results != null)
+    {
+        <div class="results-header">
+            <span class="results-count">
+                <strong>@_results.TotalCount</strong> properties found
+                @if (!string.IsNullOrEmpty(_searchQuery))
+                {
+                    <span> for "<em>@_searchQuery</em>"</span>
+                }
+            </span>
+            <span class="results-page">Page @_results.Page of @_results.TotalPages</span>
+        </div>
+
+        <div class="results-table-container">
+            <table class="data-table results-table">
+                <thead>
+                    <tr>
+                        <th>Address</th>
+                        <th>Owner</th>
+                        <th>Phone</th>
+                        <th>Email</th>
+                        <th>Age</th>
+                        <th>Roof Type</th>
+                        <th>Roof Age</th>
+                        <th>Last Permit</th>
+                        <th>Value</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var result in _results.Items)
+                    {
+                        <tr class="@(result.RoofAge >= 15 ? "row-highlight" : "")">
+                            <td>
+                                <div class="address-cell">
+                                    <strong>@result.Address</strong>
+                                    <small>@result.City, FL @result.ZipCode</small>
+                                </div>
+                            </td>
+                            <td><strong>@result.OwnerName</strong></td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(result.PhoneNumber))
+                                {
+                                    <a href="tel:@result.PhoneNumber" class="contact-link">
+                                        <i class="fas fa-phone"></i> @result.PhoneNumber
+                                    </a>
+                                }
+                            </td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(result.Email))
+                                {
+                                    <a href="mailto:@result.Email" class="contact-link">
+                                        <i class="fas fa-envelope"></i> @result.Email
+                                    </a>
+                                }
+                            </td>
+                            <td>@(result.OwnerAge?.ToString() ?? "N/A")</td>
+                            <td>
+                                <span class="badge badge-info">@result.RoofType</span>
+                            </td>
+                            <td>
+                                <span class="badge @GetRoofAgeBadge(result.RoofAge)">
+                                    @(result.RoofAge?.ToString() ?? "N/A") yrs
+                                </span>
+                            </td>
+                            <td>
+                                @if (result.LastRoofPermitDate.HasValue)
+                                {
+                                    <span>@result.LastRoofPermitDate.Value.ToString("MM/dd/yyyy")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">No record</span>
+                                }
+                            </td>
+                            <td>
+                                @if (result.EstimatedValue.HasValue)
+                                {
+                                    <span>@result.EstimatedValue.Value.ToString("C0")</span>
+                                }
+                            </td>
+                            <td>
+                                <a href="/property/@result.PropertyId" class="btn-view">
+                                    <i class="fas fa-eye"></i> View
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (_results.TotalPages > 1)
+        {
+            <div class="pagination">
+                <button class="page-btn" disabled="@(!_results.HasPreviousPage)" @onclick="PreviousPage">
+                    <i class="fas fa-chevron-left"></i> Previous
+                </button>
+                @for (int i = Math.Max(1, _results.Page - 2); i <= Math.Min(_results.TotalPages, _results.Page + 2); i++)
+                {
+                    var pageNum = i;
+                    <button class="page-btn @(pageNum == _results.Page ? "active" : "")" @onclick="() => GoToPage(pageNum)">
+                        @pageNum
+                    </button>
+                }
+                <button class="page-btn" disabled="@(!_results.HasNextPage)" @onclick="NextPage">
+                    Next <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        }
+    }
+    else if (_hasSearched)
+    {
+        <div class="no-results">
+            <i class="fas fa-search"></i>
+            <h3>No properties found</h3>
+            <p>Try adjusting your search criteria or filters.</p>
+        </div>
+    }
+    else
+    {
+        <div class="search-prompt">
+            <i class="fas fa-building"></i>
+            <h3>Search Florida Properties</h3>
+            <p>Enter an address, city, zip code, or owner name to find property and permit information.</p>
+        </div>
+    }
+</div>
+
+@code {
+    private SearchMode _searchMode = SearchMode.Address;
+    private string _searchQuery = "";
+    private string _selectedCounty = "";
+    private int? _minRoofAge;
+    private int? _maxRoofAge;
+    private PaginatedResult<SearchResult>? _results;
+    private List<string> _counties = new();
+    private bool _loading;
+    private bool _hasSearched;
+    private int _currentPage = 1;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _counties = await PropertyService.GetCountiesAsync();
+
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("mode", out var mode))
+        {
+            if (mode == "owner") _searchMode = SearchMode.Owner;
+        }
+    }
+
+    private void SetMode(SearchMode mode)
+    {
+        _searchMode = mode;
+        _results = null;
+        _hasSearched = false;
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            await ExecuteSearch();
+    }
+
+    private async Task ExecuteSearch()
+    {
+        _loading = true;
+        _hasSearched = true;
+        StateHasChanged();
+
+        var request = new SearchRequest
+        {
+            Query = _searchQuery,
+            Mode = _searchMode,
+            County = string.IsNullOrEmpty(_selectedCounty) ? null : _selectedCounty,
+            MinRoofAge = _minRoofAge,
+            MaxRoofAge = _maxRoofAge,
+            Page = _currentPage,
+            PageSize = 25
+        };
+
+        _results = _searchMode == SearchMode.Owner
+            ? await PropertyService.SearchByOwnerAsync(request)
+            : await PropertyService.SearchByAddressAsync(request);
+
+        _loading = false;
+    }
+
+    private async Task ClearSearch()
+    {
+        _searchQuery = "";
+        _selectedCounty = "";
+        _minRoofAge = null;
+        _maxRoofAge = null;
+        _currentPage = 1;
+        _results = null;
+        _hasSearched = false;
+        await Task.CompletedTask;
+    }
+
+    private async Task PreviousPage()
+    {
+        _currentPage = Math.Max(1, _currentPage - 1);
+        await ExecuteSearch();
+    }
+
+    private async Task NextPage()
+    {
+        _currentPage++;
+        await ExecuteSearch();
+    }
+
+    private async Task GoToPage(int page)
+    {
+        _currentPage = page;
+        await ExecuteSearch();
+    }
+
+    private string GetRoofAgeBadge(int? age) => age switch
+    {
+        null => "badge-secondary",
+        <= 5 => "badge-success",
+        <= 10 => "badge-info",
+        <= 15 => "badge-warning",
+        _ => "badge-danger"
+    };
+}
