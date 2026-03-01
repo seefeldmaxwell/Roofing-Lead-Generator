@@ -1,0 +1,114 @@
+@page "/disasters"
+@inject PropertyService PropertyService
+
+<div class="disasters-page">
+    <div class="page-header">
+        <h2><i class="fas fa-exclamation-triangle"></i> FEMA Disaster Declarations - Florida</h2>
+        <p>Real-time data from the <a href="https://www.fema.gov/about/openfema/api" target="_blank">OpenFEMA API</a> — disaster declarations affecting Florida properties</p>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Loading FEMA disaster data...</span>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-shield-alt"></i> Recent Florida Disaster Declarations (@_disasters.Count)</h3>
+            </div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Disaster #</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Date</th>
+                            <th>County</th>
+                            <th>Incident</th>
+                            <th>Programs</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var disaster in _disasters)
+                        {
+                            <tr>
+                                <td><strong>@disaster.DisasterNumber</strong></td>
+                                <td>@disaster.Title</td>
+                                <td><span class="badge @GetDisasterTypeBadge(disaster.DisasterType)">@disaster.DisasterType</span></td>
+                                <td>@(disaster.DeclarationDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                <td>@(disaster.DeclaredCounty ?? "Statewide")</td>
+                                <td><span class="badge badge-secondary">@(disaster.IncidentType ?? "N/A")</span></td>
+                                <td>
+                                    @if (disaster.IndividualAssistance)
+                                    {<span class="badge badge-info" title="Individual Assistance">IA</span>}
+                                    @if (disaster.PublicAssistance)
+                                    {<span class="badge badge-success" title="Public Assistance">PA</span>}
+                                    @if (disaster.HazardMitigation)
+                                    {<span class="badge badge-warning" title="Hazard Mitigation">HM</span>}
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-database"></i> Data Sources</h3>
+            </div>
+            <div class="card-body">
+                <div class="data-sources-grid">
+                    <div class="data-source-item">
+                        <i class="fas fa-shield-alt" style="color: var(--accent-blue);"></i>
+                        <div>
+                            <strong>OpenFEMA Disaster Declarations API</strong>
+                            <p>Real-time federal disaster declaration data</p>
+                            <code>fema.gov/api/open/v2/DisasterDeclarationsSummaries</code>
+                        </div>
+                    </div>
+                    <div class="data-source-item">
+                        <i class="fas fa-water" style="color: var(--accent-teal);"></i>
+                        <div>
+                            <strong>FEMA National Flood Hazard Layer (NFHL)</strong>
+                            <p>Flood zone lookup by coordinates via ArcGIS REST</p>
+                            <code>hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer</code>
+                        </div>
+                    </div>
+                    <div class="data-source-item">
+                        <i class="fas fa-file-invoice-dollar" style="color: var(--warning);"></i>
+                        <div>
+                            <strong>NFIP Claims & Policies</strong>
+                            <p>National Flood Insurance Program claims data by zip code</p>
+                            <code>fema.gov/api/open/v2/FimaNfipClaims</code>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<FemaDisaster> _disasters = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _disasters = await PropertyService.GetRecentDisastersAsync(50);
+        _loading = false;
+    }
+
+    private string GetDisasterTypeBadge(string type) => type switch
+    {
+        "DR" => "badge-danger",
+        "EM" => "badge-warning",
+        "FM" => "badge-info",
+        _ => "badge-secondary"
+    };
+}

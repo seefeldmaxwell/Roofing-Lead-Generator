@@ -36,6 +36,18 @@
                     <span class="badge @(_property.RoofAge >= 15 ? "badge-danger" : "badge-success")">
                         Roof: @(_property.RoofAge?.ToString() ?? "N/A") years
                     </span>
+                    @if (!string.IsNullOrEmpty(_property.LeadPriority))
+                    {
+                        <span class="badge @GetLeadBadge(_property.LeadPriority)">
+                            @_property.LeadPriority Lead
+                        </span>
+                    }
+                    @if (_property.OverallRiskScore > 0)
+                    {
+                        <span class="badge @GetRiskScoreBadge(_property.OverallRiskScore)">
+                            Risk: @_property.OverallRiskScore/100
+                        </span>
+                    }
                 </div>
             </div>
         </div>
@@ -86,6 +98,14 @@
                         <div class="info-item">
                             <span class="info-label">Last Roof Permit</span>
                             <span class="info-value">@(_property.LastRoofPermitDate?.ToString("MM/dd/yyyy") ?? "No record")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Data Source</span>
+                            <span class="info-value"><small>@(_property.DataSource ?? "FDOT")</small></span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Last Refreshed</span>
+                            <span class="info-value"><small>@(_property.LastDataRefresh?.ToString("g") ?? "N/A")</small></span>
                         </div>
                     </div>
                 </div>
@@ -148,6 +168,231 @@
             }
         </div>
 
+        <!-- Flood & Fire Risk Section -->
+        <div class="detail-grid">
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-water"></i> Flood Zone Information</h3></div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Flood Zone</span>
+                            <span class="info-value">
+                                @if (_property.IsInHighRiskFloodZone)
+                                {
+                                    <span class="badge badge-danger">
+                                        <i class="fas fa-exclamation-triangle"></i> @(_property.FloodZone ?? "High Risk")
+                                    </span>
+                                }
+                                else if (_property.IsInFloodZone)
+                                {
+                                    <span class="badge badge-warning">@(_property.FloodZone ?? "Moderate")</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-success">@(_property.FloodZone ?? "Zone X - Minimal Risk")</span>
+                                }
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Zone Description</span>
+                            <span class="info-value">@(_property.FloodZoneDescription ?? "N/A")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Requires Flood Insurance</span>
+                            <span class="info-value">
+                                @if (_property.RequiresFloodInsurance)
+                                {
+                                    <span class="badge badge-danger">Yes - Required</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-success">Not Required</span>
+                                }
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">FEMA Map Panel</span>
+                            <span class="info-value">@(_property.FemaMapPanel ?? "N/A")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Has Flood Insurance</span>
+                            <span class="info-value">
+                                <span class="badge @(_property.HasFloodInsurance ? "badge-success" : "badge-secondary")">
+                                    @(_property.HasFloodInsurance ? "Yes" : "Unknown")
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Insured Value</span>
+                            <span class="info-value">@(_property.InsuredValue?.ToString("C0") ?? "N/A")</span>
+                        </div>
+                    </div>
+                    <div class="data-source-note">
+                        <small><i class="fas fa-info-circle"></i> Flood zone data from FEMA National Flood Hazard Layer (NFHL)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header"><h3><i class="fas fa-fire"></i> Fire Risk Assessment</h3></div>
+                <div class="card-body">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Fire Risk Level</span>
+                            <span class="info-value">
+                                @if (!string.IsNullOrEmpty(_property.FireRiskLevel))
+                                {
+                                    <span class="badge @GetFireRiskBadge(_property.FireRiskLevel)">
+                                        <i class="fas fa-fire"></i> @_property.FireRiskLevel
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not assessed</span>
+                                }
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Wildfire Risk Score</span>
+                            <span class="info-value">
+                                <span class="badge @GetRiskScoreBadge(_property.WildfireRiskScore)">
+                                    @_property.WildfireRiskScore / 100
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">In Wildfire Zone</span>
+                            <span class="info-value">
+                                <span class="badge @(_property.IsInWildfireZone ? "badge-warning" : "badge-success")">
+                                    @(_property.IsInWildfireZone ? "Yes" : "No")
+                                </span>
+                            </span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fire Protection Class</span>
+                            <span class="info-value">@(_property.FireProtectionClass ?? "N/A")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Distance to Fire Station</span>
+                            <span class="info-value">@(_property.DistanceToFireStation?.ToString("N1") ?? "N/A") miles</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Has Wind Insurance</span>
+                            <span class="info-value">
+                                <span class="badge @(_property.HasWindInsurance ? "badge-success" : "badge-secondary")">
+                                    @(_property.HasWindInsurance ? "Yes" : "Unknown")
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="data-source-note">
+                        <small><i class="fas fa-info-circle"></i> Fire risk data from NIFC/IRWIN and NASA FIRMS satellite detection</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Insurance Claims Section -->
+        @if (_property.InsuranceClaims?.Any() == true)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-file-contract"></i> Insurance Claims (@_property.InsuranceClaims.Count claims)</h3>
+                </div>
+                <div class="card-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Claim #</th>
+                                <th>Type</th>
+                                <th>Cause</th>
+                                <th>Date of Loss</th>
+                                <th>Amount</th>
+                                <th>Paid</th>
+                                <th>Status</th>
+                                <th>Category</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var claim in _property.InsuranceClaims)
+                            {
+                                <tr>
+                                    <td><strong>@claim.ClaimNumber</strong></td>
+                                    <td><span class="badge badge-info">@claim.ClaimType</span></td>
+                                    <td>@claim.CauseOfLoss</td>
+                                    <td>@(claim.DateOfLoss?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                    <td>@(claim.ClaimAmount?.ToString("C0") ?? "N/A")</td>
+                                    <td>@(claim.PaidAmount?.ToString("C0") ?? "N/A")</td>
+                                    <td>
+                                        <span class="badge @(claim.Status == "Open" ? "badge-warning" : "badge-success")">
+                                            @claim.Status
+                                        </span>
+                                    </td>
+                                    <td>
+                                        @if (claim.IsRoofClaim) { <span class="badge badge-warning">Roof</span> }
+                                        @if (claim.IsFloodClaim) { <span class="badge badge-info">Flood</span> }
+                                        @if (claim.IsFireClaim) { <span class="badge badge-danger">Fire</span> }
+                                        @if (claim.IsWindClaim) { <span class="badge badge-secondary">Wind</span> }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <!-- Fire Incidents Section -->
+        @if (_property.FireIncidents?.Any() == true)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-fire-alt"></i> Nearby Fire Incidents (@_property.FireIncidents.Count incidents)</h3>
+                </div>
+                <div class="card-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Incident</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                                <th>County</th>
+                                <th>Acres</th>
+                                <th>Distance</th>
+                                <th>Structures</th>
+                                <th>Source</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var incident in _property.FireIncidents)
+                            {
+                                <tr>
+                                    <td><strong>@incident.IncidentName</strong></td>
+                                    <td><span class="badge badge-warning">@incident.IncidentType</span></td>
+                                    <td>@(incident.DiscoveryDate?.ToString("MM/dd/yyyy") ?? "N/A")</td>
+                                    <td>@incident.County</td>
+                                    <td>@(incident.AcresBurned?.ToString("N0") ?? "N/A")</td>
+                                    <td>@(incident.DistanceToProperty?.ToString("N1") ?? "N/A") mi</td>
+                                    <td>
+                                        @if (incident.StructuresDamaged > 0 || incident.StructuresDestroyed > 0)
+                                        {
+                                            <span class="badge badge-danger">@(incident.StructuresDestroyed) destroyed, @(incident.StructuresDamaged) damaged</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">None</span>
+                                        }
+                                    </td>
+                                    <td><small>@incident.DataSource</small></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+
+        <!-- Permit History -->
         <div class="card permits-card">
             <div class="card-header">
                 <h3><i class="fas fa-file-alt"></i> Permit History (@_property.Permits.Count permits)</h3>
@@ -233,6 +478,30 @@
         "Completed" or "Final" => "badge-success",
         "Approved" or "In Progress" => "badge-info",
         "Expired" => "badge-danger",
+        _ => "badge-secondary"
+    };
+
+    private string GetLeadBadge(string? priority) => priority switch
+    {
+        "Hot" => "badge-danger",
+        "Warm" => "badge-warning",
+        "Cold" => "badge-info",
+        _ => "badge-secondary"
+    };
+
+    private string GetRiskScoreBadge(int score) => score switch
+    {
+        >= 75 => "badge-danger",
+        >= 50 => "badge-warning",
+        >= 25 => "badge-info",
+        _ => "badge-secondary"
+    };
+
+    private string GetFireRiskBadge(string level) => level?.ToLower() switch
+    {
+        "high" or "extreme" => "badge-danger",
+        "moderate" or "medium" => "badge-warning",
+        "low" => "badge-success",
         _ => "badge-secondary"
     };
 }

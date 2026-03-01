@@ -51,6 +51,27 @@
                 <label>Max Roof Age</label>
                 <input type="number" class="filter-input" placeholder="Max" @bind="_maxRoofAge" min="0" max="50" />
             </div>
+            <div class="filter-group filter-checkbox-group">
+                <label>
+                    <input type="checkbox" @bind="_inFloodZone" />
+                    <i class="fas fa-water"></i> Flood Zone Only
+                </label>
+            </div>
+            <div class="filter-group filter-checkbox-group">
+                <label>
+                    <input type="checkbox" @bind="_highFireRisk" />
+                    <i class="fas fa-fire"></i> High Fire Risk
+                </label>
+            </div>
+            <div class="filter-group">
+                <label>Lead Priority</label>
+                <select @bind="_leadPriority" class="filter-select">
+                    <option value="">All Priorities</option>
+                    <option value="Hot">Hot Leads</option>
+                    <option value="Warm">Warm Leads</option>
+                    <option value="Cold">Cold Leads</option>
+                </select>
+            </div>
             <button class="filter-apply-btn" @onclick="ExecuteSearch">
                 <i class="fas fa-filter"></i> Apply Filters
             </button>
@@ -61,7 +82,7 @@
     {
         <div class="loading-spinner">
             <i class="fas fa-spinner fa-spin"></i>
-            <span>Searching properties...</span>
+            <span>Searching properties via live FDOT API...</span>
         </div>
     }
     else if (_results != null)
@@ -84,19 +105,19 @@
                         <th>Address</th>
                         <th>Owner</th>
                         <th>Phone</th>
-                        <th>Email</th>
-                        <th>Age</th>
-                        <th>Roof Type</th>
                         <th>Roof Age</th>
-                        <th>Last Permit</th>
-                        <th>Value</th>
+                        <th>Flood Zone</th>
+                        <th>Fire Risk</th>
+                        <th>Claims</th>
+                        <th>Risk Score</th>
+                        <th>Lead</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var result in _results.Items)
                     {
-                        <tr class="@(result.RoofAge >= 15 ? "row-highlight" : "")">
+                        <tr class="@GetRowClass(result)">
                             <td>
                                 <div class="address-cell">
                                     <strong>@result.Address</strong>
@@ -113,37 +134,65 @@
                                 }
                             </td>
                             <td>
-                                @if (!string.IsNullOrEmpty(result.Email))
-                                {
-                                    <a href="mailto:@result.Email" class="contact-link">
-                                        <i class="fas fa-envelope"></i> @result.Email
-                                    </a>
-                                }
-                            </td>
-                            <td>@(result.OwnerAge?.ToString() ?? "N/A")</td>
-                            <td>
-                                <span class="badge badge-info">@result.RoofType</span>
-                            </td>
-                            <td>
                                 <span class="badge @GetRoofAgeBadge(result.RoofAge)">
                                     @(result.RoofAge?.ToString() ?? "N/A") yrs
                                 </span>
                             </td>
                             <td>
-                                @if (result.LastRoofPermitDate.HasValue)
+                                @if (result.IsInHighRiskFloodZone)
                                 {
-                                    <span>@result.LastRoofPermitDate.Value.ToString("MM/dd/yyyy")</span>
+                                    <span class="badge badge-danger">
+                                        <i class="fas fa-water"></i> @(result.FloodZone ?? "High")
+                                    </span>
+                                }
+                                else if (!string.IsNullOrEmpty(result.FloodZone) && result.FloodZone != "X")
+                                {
+                                    <span class="badge badge-info">@result.FloodZone</span>
                                 }
                                 else
                                 {
-                                    <span class="text-muted">No record</span>
+                                    <span class="badge badge-secondary">None</span>
                                 }
                             </td>
                             <td>
-                                @if (result.EstimatedValue.HasValue)
+                                @if (!string.IsNullOrEmpty(result.FireRiskLevel))
                                 {
-                                    <span>@result.EstimatedValue.Value.ToString("C0")</span>
+                                    <span class="badge @GetFireRiskBadge(result.FireRiskLevel)">
+                                        <i class="fas fa-fire"></i> @result.FireRiskLevel
+                                    </span>
                                 }
+                                else if (result.WildfireRiskScore > 0)
+                                {
+                                    <span class="badge @(result.WildfireRiskScore > 50 ? "badge-warning" : "badge-secondary")">
+                                        @result.WildfireRiskScore/100
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">N/A</span>
+                                }
+                            </td>
+                            <td>
+                                @if (result.TotalClaims > 0)
+                                {
+                                    <span class="badge @(result.HasOpenClaim ? "badge-danger" : "badge-info")">
+                                        @result.TotalClaims @(result.HasOpenClaim ? "(Open)" : "")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">0</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge @GetRiskScoreBadge(result.OverallRiskScore)">
+                                    @result.OverallRiskScore/100
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @GetLeadBadge(result.LeadPriority)">
+                                    @(result.LeadPriority ?? "N/A")
+                                </span>
                             </td>
                             <td>
                                 <a href="/property/@result.PropertyId" class="btn-view">
@@ -180,7 +229,7 @@
         <div class="no-results">
             <i class="fas fa-search"></i>
             <h3>No properties found</h3>
-            <p>Try adjusting your search criteria or filters.</p>
+            <p>Try adjusting your search criteria or filters. Data is fetched live from FDOT public records.</p>
         </div>
     }
     else
@@ -188,7 +237,8 @@
         <div class="search-prompt">
             <i class="fas fa-building"></i>
             <h3>Search Florida Properties</h3>
-            <p>Enter an address, city, zip code, or owner name to find property and permit information.</p>
+            <p>Enter an address, city, zip code, or owner name to search real-time FDOT property records.</p>
+            <p class="text-muted"><small>Data sourced from FDOT Statewide Parcels, FEMA flood zones, and NIFC fire data.</small></p>
         </div>
     }
 </div>
@@ -199,6 +249,9 @@
     private string _selectedCounty = "";
     private int? _minRoofAge;
     private int? _maxRoofAge;
+    private bool _inFloodZone;
+    private bool _highFireRisk;
+    private string _leadPriority = "";
     private PaginatedResult<SearchResult>? _results;
     private List<string> _counties = new();
     private bool _loading;
@@ -242,6 +295,9 @@
             County = string.IsNullOrEmpty(_selectedCounty) ? null : _selectedCounty,
             MinRoofAge = _minRoofAge,
             MaxRoofAge = _maxRoofAge,
+            InFloodZone = _inFloodZone ? true : null,
+            HighFireRisk = _highFireRisk ? true : null,
+            LeadPriority = string.IsNullOrEmpty(_leadPriority) ? null : _leadPriority,
             Page = _currentPage,
             PageSize = 25
         };
@@ -259,6 +315,9 @@
         _selectedCounty = "";
         _minRoofAge = null;
         _maxRoofAge = null;
+        _inFloodZone = false;
+        _highFireRisk = false;
+        _leadPriority = "";
         _currentPage = 1;
         _results = null;
         _hasSearched = false;
@@ -283,6 +342,14 @@
         await ExecuteSearch();
     }
 
+    private string GetRowClass(SearchResult result)
+    {
+        if (result.LeadPriority == "Hot") return "row-highlight";
+        if (result.IsInHighRiskFloodZone) return "row-flood-risk";
+        if (result.RoofAge >= 15) return "row-highlight";
+        return "";
+    }
+
     private string GetRoofAgeBadge(int? age) => age switch
     {
         null => "badge-secondary",
@@ -290,5 +357,29 @@
         <= 10 => "badge-info",
         <= 15 => "badge-warning",
         _ => "badge-danger"
+    };
+
+    private string GetFireRiskBadge(string level) => level?.ToLower() switch
+    {
+        "high" or "extreme" => "badge-danger",
+        "moderate" or "medium" => "badge-warning",
+        "low" => "badge-success",
+        _ => "badge-secondary"
+    };
+
+    private string GetRiskScoreBadge(int score) => score switch
+    {
+        >= 75 => "badge-danger",
+        >= 50 => "badge-warning",
+        >= 25 => "badge-info",
+        _ => "badge-secondary"
+    };
+
+    private string GetLeadBadge(string? priority) => priority switch
+    {
+        "Hot" => "badge-danger",
+        "Warm" => "badge-warning",
+        "Cold" => "badge-info",
+        _ => "badge-secondary"
     };
 }

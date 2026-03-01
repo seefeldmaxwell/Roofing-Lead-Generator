@@ -42,6 +42,37 @@
             </div>
         </div>
 
+        <div class="stats-grid">
+            <div class="stat-card stat-primary">
+                <div class="stat-icon"><i class="fas fa-water"></i></div>
+                <div class="stat-info">
+                    <span class="stat-number">@_stats.PropertiesInFloodZone</span>
+                    <span class="stat-label">In Flood Zone</span>
+                </div>
+            </div>
+            <div class="stat-card stat-danger">
+                <div class="stat-icon"><i class="fas fa-house-damage"></i></div>
+                <div class="stat-info">
+                    <span class="stat-number">@_stats.PropertiesHighRiskFlood</span>
+                    <span class="stat-label">High-Risk Flood</span>
+                </div>
+            </div>
+            <div class="stat-card stat-warning">
+                <div class="stat-icon"><i class="fas fa-fire"></i></div>
+                <div class="stat-info">
+                    <span class="stat-number">@_stats.PropertiesHighFireRisk</span>
+                    <span class="stat-label">High Fire Risk</span>
+                </div>
+            </div>
+            <div class="stat-card stat-success">
+                <div class="stat-icon"><i class="fas fa-file-contract"></i></div>
+                <div class="stat-info">
+                    <span class="stat-number">@_stats.TotalInsuranceClaims</span>
+                    <span class="stat-label">Insurance Claims</span>
+                </div>
+            </div>
+        </div>
+
         <div class="dashboard-grid">
             <div class="card">
                 <div class="card-header">
@@ -53,8 +84,10 @@
                             <tr>
                                 <th>County</th>
                                 <th>Properties</th>
-                                <th>Old Roofs (15+ yr)</th>
-                                <th>Lead Potential</th>
+                                <th>Flood Zone</th>
+                                <th>Fire Risk</th>
+                                <th>Old Roofs</th>
+                                <th>Lead Score</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -64,17 +97,29 @@
                                     <td><strong>@county.County</strong></td>
                                     <td>@county.PropertyCount</td>
                                     <td>
-                                        <span class="badge @(county.OldRoofCount > 0 ? "badge-warning" : "badge-success")">
+                                        <span class="badge @(county.FloodZoneCount > 0 ? "badge-info" : "badge-secondary")">
+                                            @county.FloodZoneCount
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(county.HighFireRiskCount > 0 ? "badge-warning" : "badge-secondary")">
+                                            @county.HighFireRiskCount
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(county.OldRoofCount > 0 ? "badge-danger" : "badge-success")">
                                             @county.OldRoofCount
                                         </span>
                                     </td>
                                     <td>
                                         <div class="progress-bar-container">
                                             @{
-                                                var pct = county.PropertyCount > 0 ? (int)((double)county.OldRoofCount / county.PropertyCount * 100) : 0;
+                                                var riskPct = county.PropertyCount > 0
+                                                    ? (int)((double)(county.OldRoofCount + county.FloodZoneCount + county.HighFireRiskCount) / (county.PropertyCount * 3) * 100)
+                                                    : 0;
                                             }
-                                            <div class="progress-bar" style="width: @(pct)%"></div>
-                                            <span class="progress-text">@(pct)%</span>
+                                            <div class="progress-bar" style="width: @(riskPct)%"></div>
+                                            <span class="progress-text">@(riskPct)%</span>
                                         </div>
                                     </td>
                                 </tr>
@@ -116,12 +161,20 @@
                         <span>Search by Address</span>
                     </a>
                     <a href="/search?mode=owner" class="action-btn">
-                        <i class="fas fa-user-search"></i>
+                        <i class="fas fa-user"></i>
                         <span>Search by Owner</span>
                     </a>
                     <a href="/permits" class="action-btn">
                         <i class="fas fa-file-alt"></i>
                         <span>Recent Permits</span>
+                    </a>
+                    <a href="/risk" class="action-btn">
+                        <i class="fas fa-chart-bar"></i>
+                        <span>Risk Assessment</span>
+                    </a>
+                    <a href="/disasters" class="action-btn">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>FEMA Disasters</span>
                     </a>
                     <a href="/api-status" class="action-btn action-btn-coming-soon">
                         <i class="fas fa-code"></i>

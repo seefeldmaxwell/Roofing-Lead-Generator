@@ -1,0 +1,166 @@
+@page "/risk"
+@inject PropertyService PropertyService
+
+<div class="risk-page">
+    <div class="page-header">
+        <h2><i class="fas fa-chart-bar"></i> Risk Assessment & Lead Scoring</h2>
+        <p>Flood zones, fire risk, and claim data for public adjusters and roofers — powered by FEMA, NIFC, and NOAA</p>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="loading-spinner">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Loading risk data...</span>
+        </div>
+    }
+    else if (_stats != null)
+    {
+        <div class="stats-grid">
+            <div class="stat-card stat-primary">
+                <div class="stat-icon"><i class="fas fa-water"></i></div>
+                <div class="stat-info">
+                    <span class="stat-number">@_stats.PropertiesInFloodZone</span>
+                    <span class="stat-label">In Flood Zone</span>
+                </div>
+            </div>
+            <div class="stat-card stat-danger">
+                <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="stat-info">
+                    <span class="stat-number">@_stats.PropertiesHighRiskFlood</span>
+                    <span class="stat-label">High-Risk Flood</span>
+                </div>
+            </div>
+            <div class="stat-card stat-warning">
+                <div class="stat-icon"><i class="fas fa-fire"></i></div>
+                <div class="stat-info">
+                    <span class="stat-number">@_stats.PropertiesHighFireRisk</span>
+                    <span class="stat-label">High Fire Risk</span>
+                </div>
+            </div>
+            <div class="stat-card stat-success">
+                <div class="stat-icon"><i class="fas fa-file-contract"></i></div>
+                <div class="stat-info">
+                    <span class="stat-number">@_stats.TotalInsuranceClaims</span>
+                    <span class="stat-label">Insurance Claims</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-water"></i> Flood & Fire Risk by County</h3>
+                </div>
+                <div class="card-body">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>County</th>
+                                <th>Properties</th>
+                                <th>Flood Zone</th>
+                                <th>High Fire Risk</th>
+                                <th>Old Roofs</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var county in _stats.CountyBreakdowns.Where(c => c.PropertyCount > 0))
+                            {
+                                <tr>
+                                    <td><strong>@county.County</strong></td>
+                                    <td>@county.PropertyCount</td>
+                                    <td>
+                                        <span class="badge @(county.FloodZoneCount > 0 ? "badge-info" : "badge-secondary")">
+                                            @county.FloodZoneCount
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(county.HighFireRiskCount > 0 ? "badge-warning" : "badge-secondary")">
+                                            @county.HighFireRiskCount
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(county.OldRoofCount > 0 ? "badge-danger" : "badge-success")">
+                                            @county.OldRoofCount
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-database"></i> Real-Time Data Sources</h3>
+                </div>
+                <div class="card-body">
+                    <div class="data-sources-list">
+                        <div class="data-source-row">
+                            <span class="badge badge-success">Live</span>
+                            <strong>FEMA NFHL</strong>
+                            <span class="text-muted">Flood zone by lat/long</span>
+                        </div>
+                        <div class="data-source-row">
+                            <span class="badge badge-success">Live</span>
+                            <strong>OpenFEMA</strong>
+                            <span class="text-muted">Disaster declarations & NFIP claims</span>
+                        </div>
+                        <div class="data-source-row">
+                            <span class="badge badge-success">Live</span>
+                            <strong>NIFC/IRWIN</strong>
+                            <span class="text-muted">Active wildfire incidents</span>
+                        </div>
+                        <div class="data-source-row">
+                            <span class="badge badge-success">Live</span>
+                            <strong>NOAA Weather API</strong>
+                            <span class="text-muted">Active weather alerts & forecasts</span>
+                        </div>
+                        <div class="data-source-row">
+                            <span class="badge badge-success">Live</span>
+                            <strong>FDOT Statewide Parcels</strong>
+                            <span class="text-muted">Property data for all 67 FL counties</span>
+                        </div>
+                        <div class="data-source-row">
+                            <span class="badge badge-success">Live</span>
+                            <strong>FL Statewide Cadastral</strong>
+                            <span class="text-muted">FL Dept of Revenue parcel data</span>
+                        </div>
+                        <div class="data-source-row">
+                            <span class="badge badge-success">Live</span>
+                            <strong>US Census Geocoder</strong>
+                            <span class="text-muted">Address geocoding for any FL address</span>
+                        </div>
+                        <div class="data-source-row">
+                            <span class="badge badge-info">Available</span>
+                            <strong>Miami-Dade Permits</strong>
+                            <span class="text-muted">Building permits via Open Data Hub</span>
+                        </div>
+                        <div class="data-source-row">
+                            <span class="badge badge-info">Available</span>
+                            <strong>NASA FIRMS</strong>
+                            <span class="text-muted">Satellite fire hotspot detection</span>
+                        </div>
+                        <div class="data-source-row">
+                            <span class="badge badge-info">Available</span>
+                            <strong>SBA Disaster Loans</strong>
+                            <span class="text-muted">CKAN API - disaster loan data by zip</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private DashboardStats? _stats;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stats = await PropertyService.GetDashboardStatsAsync();
+        _loading = false;
+    }
+}

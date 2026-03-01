@@ -20,6 +20,26 @@ public class SearchResult
     public int TotalPermits { get; set; }
     public decimal? EstimatedValue { get; set; }
     public string? ImageUrl { get; set; }
+
+    // Flood data
+    public string? FloodZone { get; set; }
+    public bool IsInHighRiskFloodZone { get; set; }
+    public bool RequiresFloodInsurance { get; set; }
+
+    // Fire risk
+    public string? FireRiskLevel { get; set; }
+    public int? WildfireRiskScore { get; set; }
+
+    // Insurance
+    public int TotalClaims { get; set; }
+    public bool HasOpenClaim { get; set; }
+
+    // Risk / Lead scoring
+    public int? OverallRiskScore { get; set; }
+    public string? LeadPriority { get; set; }
+
+    // Data source
+    public string? DataSource { get; set; }
 }
 
 public class SearchRequest
@@ -32,6 +52,9 @@ public class SearchRequest
     public int? MinRoofAge { get; set; }
     public int? MaxRoofAge { get; set; }
     public string? PropertyType { get; set; }
+    public bool? InFloodZone { get; set; }
+    public bool? HighFireRisk { get; set; }
+    public string? LeadPriority { get; set; }
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 25;
 }
@@ -49,6 +72,15 @@ public class DashboardStats
     public int TotalPermits { get; set; }
     public int RoofsOver15Years { get; set; }
     public int RecentPermits30Days { get; set; }
+
+    // Flood/fire stats
+    public int PropertiesInFloodZone { get; set; }
+    public int PropertiesHighRiskFlood { get; set; }
+    public int PropertiesHighFireRisk { get; set; }
+    public int TotalInsuranceClaims { get; set; }
+    public int OpenClaims { get; set; }
+    public int FemaDisasters { get; set; }
+
     public List<CountyBreakdown> CountyBreakdowns { get; set; } = new();
     public List<RoofAgeDistribution> RoofAgeDistributions { get; set; } = new();
 }
@@ -58,6 +90,8 @@ public class CountyBreakdown
     public string County { get; set; } = string.Empty;
     public int PropertyCount { get; set; }
     public int OldRoofCount { get; set; }
+    public int FloodZoneCount { get; set; }
+    public int HighFireRiskCount { get; set; }
 }
 
 public class RoofAgeDistribution
