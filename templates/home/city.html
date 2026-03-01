@@ -1,0 +1,30 @@
+{% extends "home/public_layout.html" %}
+{% block title %}{{ city_name }}, {{ county_name }} County FL - FL Property Permit Tracker{% endblock %}
+{% block content %}
+<section class="county-hero">
+    <div class="section-inner">
+        <nav class="breadcrumb"><a href="/">Home</a> &raquo; <a href="/counties">Counties</a> &raquo; <a href="/florida/{{ county_slug }}">{{ county_name }}</a> &raquo; {{ city_name }}</nav>
+        <h1><i class="fas fa-city"></i> {{ city_name }}, Florida</h1>
+        <p class="hero-description">Property data, building permits, flood zones, and fire risk for {{ city_name }} in {{ county_name }} County</p>
+    </div>
+</section>
+
+<section class="section-inner" style="padding:2rem 0;">
+    <div class="stats-showcase">
+        <div class="showcase-stat"><span class="showcase-number">{{ stats.property_count }}</span><span class="showcase-label">Properties</span></div>
+        <div class="showcase-stat"><span class="showcase-number">{{ stats.permit_count }}</span><span class="showcase-label">Permits</span></div>
+        <div class="showcase-stat"><span class="showcase-number">{{ stats.flood_zone_count }}</span><span class="showcase-label">Flood Zone</span></div>
+        <div class="showcase-stat"><span class="showcase-number">{{ stats.high_fire_risk_count }}</span><span class="showcase-label">High Fire Risk</span></div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="section-inner">
+        <div class="cta-content">
+            <h2>Search {{ city_name }} Properties</h2>
+            <p>Access real-time property data, permits, and risk analysis.</p>
+            <a href="/account/login" class="hero-btn-primary"><i class="fas fa-sign-in-alt"></i> Sign In Free</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "home/public_layout.html" %}
+{% block title %}All 67 Florida Counties - FL Property Permit Tracker{% endblock %}
+{% block content %}
+<section class="county-hero">
+    <div class="section-inner">
+        <h1><i class="fas fa-map"></i> All 67 Florida Counties</h1>
+        <p class="hero-description">Browse property data, building permits, flood zones, and fire risk by county.</p>
+    </div>
+</section>
+
+<section class="section-inner" style="padding:2rem 0;">
+    <div class="counties-grid">
+        {% for (slug, name, cities) in counties %}
+        <a href="/florida/{{ slug }}" class="county-link">{{ name }} ({{ cities.len() }})</a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="section-inner">
+        <div class="cta-content">
+            <h2>Start Finding Roofing Leads Today</h2>
+            <p>Free access to Florida property data, permits, and risk analysis. No credit card required.</p>
+            <a href="/account/login" class="hero-btn-primary"><i class="fas fa-sign-in-alt"></i> Sign In Free</a>
+        </div>
+    </div>
+</section>
+{% endblock %}

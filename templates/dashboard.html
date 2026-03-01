@@ -1,0 +1,94 @@
+{% extends "app_layout.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block app_content %}
+<div class="dashboard">
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon"><i class="fas fa-building"></i></div>
+            <div class="stat-info"><span class="stat-number">{{ stats.total_properties }}</span><span class="stat-label">Total Properties</span></div>
+        </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
+            <div class="stat-info"><span class="stat-number">{{ stats.total_permits }}</span><span class="stat-label">Total Permits</span></div>
+        </div>
+        <div class="stat-card stat-danger">
+            <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-info"><span class="stat-number">{{ stats.roofs_over_15_years }}</span><span class="stat-label">Roofs 15+ Years Old</span></div>
+        </div>
+        <div class="stat-card stat-success">
+            <div class="stat-icon"><i class="fas fa-file-contract"></i></div>
+            <div class="stat-info"><span class="stat-number">{{ stats.total_claims }}</span><span class="stat-label">Insurance Claims</span></div>
+        </div>
+    </div>
+    <div class="stats-grid">
+        <div class="stat-card stat-primary">
+            <div class="stat-icon"><i class="fas fa-water"></i></div>
+            <div class="stat-info"><span class="stat-number">{{ stats.properties_in_flood_zone }}</span><span class="stat-label">In Flood Zone</span></div>
+        </div>
+        <div class="stat-card stat-danger">
+            <div class="stat-icon"><i class="fas fa-house-damage"></i></div>
+            <div class="stat-info"><span class="stat-number">{{ stats.properties_high_risk_flood }}</span><span class="stat-label">High-Risk Flood</span></div>
+        </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-icon"><i class="fas fa-fire"></i></div>
+            <div class="stat-info"><span class="stat-number">{{ stats.properties_high_fire_risk }}</span><span class="stat-label">High Fire Risk</span></div>
+        </div>
+        <div class="stat-card stat-success">
+            <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+            <div class="stat-info"><span class="stat-number">{{ stats.total_disasters }}</span><span class="stat-label">FEMA Disasters</span></div>
+        </div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-map-marker-alt"></i> Properties by County</h3></div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>County</th><th>Properties</th><th>Flood Zone</th><th>Fire Risk</th><th>Old Roofs</th></tr></thead>
+                    <tbody>
+                    {% for county in stats.county_breakdowns %}
+                    <tr>
+                        <td><strong>{{ county.county }}</strong></td>
+                        <td>{{ county.property_count }}</td>
+                        <td><span class="badge {% if county.flood_zone_count > 0 %}badge-info{% else %}badge-secondary{% endif %}">{{ county.flood_zone_count }}</span></td>
+                        <td><span class="badge {% if county.high_fire_risk_count > 0 %}badge-warning{% else %}badge-secondary{% endif %}">{{ county.high_fire_risk_count }}</span></td>
+                        <td><span class="badge {% if county.old_roof_count > 0 %}badge-danger{% else %}badge-success{% endif %}">{{ county.old_roof_count }}</span></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-clock"></i> Roof Age Distribution</h3></div>
+            <div class="card-body">
+                {% for dist in stats.roof_age_distributions %}
+                <div class="bar-chart-row">
+                    <span class="bar-label">{{ dist.range }}</span>
+                    <div class="bar-track">
+                        <div class="bar-fill bar-teal" style="width: {% if dist.count > 0 %}50{% else %}0{% endif %}%"></div>
+                    </div>
+                    <span class="bar-value">{{ dist.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="card quick-actions-card">
+        <div class="card-header"><h3><i class="fas fa-bolt"></i> Quick Actions</h3></div>
+        <div class="card-body">
+            <div class="quick-actions">
+                <a href="/app/search" class="action-btn"><i class="fas fa-search"></i><span>Search by Address</span></a>
+                <a href="/app/search?mode=owner" class="action-btn"><i class="fas fa-user"></i><span>Search by Owner</span></a>
+                <a href="/app/permits" class="action-btn"><i class="fas fa-file-alt"></i><span>Recent Permits</span></a>
+                <a href="/app/risk" class="action-btn"><i class="fas fa-chart-bar"></i><span>Risk Assessment</span></a>
+                <a href="/app/disasters" class="action-btn"><i class="fas fa-exclamation-circle"></i><span>FEMA Disasters</span></a>
+                <a href="/app/api-status" class="action-btn action-btn-coming-soon"><i class="fas fa-code"></i><span>API &amp; Coming Soon</span></a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

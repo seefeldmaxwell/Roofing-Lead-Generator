@@ -1,0 +1,47 @@
+{% extends "app_layout.html" %}
+{% block title %}FEMA Disasters{% endblock %}
+{% block nav_disasters %}active{% endblock %}
+{% block app_content %}
+<div class="disasters-page">
+    <div class="page-header">
+        <h2><i class="fas fa-exclamation-triangle"></i> FEMA Disaster Declarations - Florida</h2>
+        <p>Real-time data from the <a href="https://www.fema.gov/about/openfema/api" target="_blank">OpenFEMA API</a> — disaster declarations affecting Florida properties</p>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-shield-alt"></i> Recent Florida Disaster Declarations ({{ disasters.len() }})</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>Disaster #</th><th>Title</th><th>Type</th><th>County</th><th>Incident</th><th>Programs</th></tr></thead>
+                <tbody>
+                {% for d in disasters %}
+                <tr>
+                    <td><strong>{{ d.disaster_number }}</strong></td>
+                    <td>{{ d.title }}</td>
+                    <td><span class="badge {% if d.disaster_type == "DR" %}badge-danger{% else if d.disaster_type == "EM" %}badge-warning{% else %}badge-info{% endif %}">{{ d.disaster_type }}</span></td>
+                    <td>{% if let Some(county) = d.declared_county %}{{ county }}{% else %}Statewide{% endif %}</td>
+                    <td><span class="badge badge-secondary">{% if let Some(it) = d.incident_type %}{{ it }}{% else %}N/A{% endif %}</span></td>
+                    <td>
+                        {% if d.individual_assistance %}<span class="badge badge-info" title="Individual Assistance">IA</span>{% endif %}
+                        {% if d.public_assistance %}<span class="badge badge-success" title="Public Assistance">PA</span>{% endif %}
+                        {% if d.hazard_mitigation %}<span class="badge badge-warning" title="Hazard Mitigation">HM</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-database"></i> Data Sources</h3></div>
+        <div class="card-body">
+            <div class="data-sources-grid">
+                <div class="data-source-item"><i class="fas fa-shield-alt" style="color: var(--accent-blue);"></i><div><strong>OpenFEMA Disaster Declarations API</strong><p>Real-time federal disaster declaration data</p></div></div>
+                <div class="data-source-item"><i class="fas fa-water" style="color: var(--accent-teal);"></i><div><strong>FEMA National Flood Hazard Layer (NFHL)</strong><p>Flood zone lookup by coordinates via ArcGIS REST</p></div></div>
+                <div class="data-source-item"><i class="fas fa-file-invoice-dollar" style="color: var(--warning);"></i><div><strong>NFIP Claims &amp; Policies</strong><p>National Flood Insurance Program claims data by zip code</p></div></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,23 +1,23 @@
-## .NET
-bin/
-obj/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
+# Rust
+/target
+Cargo.lock
+
+# Database
 *.db
 *.db-shm
 *.db-wal
+*.db-journal
 
-## VS Code
-.vscode/
+# Environment
+.env
 
-## Rider
-.idea/
-
-## OS
+# OS
 .DS_Store
 Thumbs.db
 
-## Logs
+# IDE
+.vscode/
+.idea/
+
+# Logs
 *.log

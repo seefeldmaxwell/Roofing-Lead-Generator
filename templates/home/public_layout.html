@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}FL Property Permit Tracker{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/site.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="public-nav">
+        <div class="public-nav-inner">
+            <a href="/" class="public-logo">
+                <i class="fas fa-home"></i>
+                <span>FL Property Tracker</span>
+            </a>
+            <div class="public-nav-links">
+                <a href="/counties">All Counties</a>
+                <a href="/account/login" class="nav-btn-primary">Sign In</a>
+            </div>
+        </div>
+    </nav>
+
+    {% block content %}{% endblock %}
+
+    <footer class="public-footer">
+        <div class="footer-inner">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <h4><i class="fas fa-home"></i> FL Property Tracker</h4>
+                    <p>Florida property intelligence powered by real government data from FEMA, FDOT, NOAA, and NIFC.</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Data Sources</h4>
+                    <ul>
+                        <li>FDOT Statewide Parcels</li>
+                        <li>FEMA Flood Hazard Layer</li>
+                        <li>NIFC Active Fires</li>
+                        <li>NOAA Weather API</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Features</h4>
+                    <ul>
+                        <li><a href="/counties">All 67 Counties</a></li>
+                        <li>Property Search</li>
+                        <li>Permit Tracking</li>
+                        <li>Risk Assessment</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>Built With</h4>
+                    <ul>
+                        <li>Rust + Axum</li>
+                        <li>SQLite + SQLx</li>
+                        <li>Askama Templates</li>
+                        <li>htmx</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>Data sourced from official U.S. government APIs. All data is publicly available. Not affiliated with any government agency.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

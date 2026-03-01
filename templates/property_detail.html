@@ -1,0 +1,149 @@
+{% extends "app_layout.html" %}
+{% block title %}Property Detail{% endblock %}
+{% block nav_search %}active{% endblock %}
+{% block app_content %}
+<div class="property-detail">
+    <div class="detail-breadcrumb"><a href="/app/search"><i class="fas fa-arrow-left"></i> Back to Search</a></div>
+
+    <div class="detail-header-card">
+        <div class="detail-header-content">
+            <div class="detail-address">
+                <h2><i class="fas fa-map-marker-alt"></i> {{ property.address }}</h2>
+                <p>{{ property.city }}, {{ property.state }} {{ property.zip_code }} &bull; {{ property.county }} County</p>
+            </div>
+            <div class="detail-badges">
+                <span class="badge badge-info">{{ property.property_type }}</span>
+                <span class="badge {% if property.roof_age.unwrap_or(0) >= 15 %}badge-danger{% else %}badge-success{% endif %}">Roof: {{ property.roof_age.unwrap_or(0) }} years</span>
+                {% if let Some(lp) = property.lead_priority %}<span class="badge badge-warning">{{ lp }} Lead</span>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="detail-grid">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-home"></i> Property Information</h3></div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item"><span class="info-label">Parcel ID</span><span class="info-value">{{ property.parcel_id }}</span></div>
+                    <div class="info-item"><span class="info-label">Year Built</span><span class="info-value">{{ property.year_built.unwrap_or(0) }}</span></div>
+                    <div class="info-item"><span class="info-label">Bedrooms</span><span class="info-value">{{ property.bedrooms.unwrap_or(0) }}</span></div>
+                    <div class="info-item"><span class="info-label">Bathrooms</span><span class="info-value">{{ property.bathrooms.unwrap_or(0) }}</span></div>
+                    <div class="info-item"><span class="info-label">Roof Type</span><span class="info-value">{{ property.roof_type }}</span></div>
+                    <div class="info-item"><span class="info-label">Roof Age</span><span class="info-value {% if property.roof_age.unwrap_or(0) >= 15 %}text-danger{% endif %}">{{ property.roof_age.unwrap_or(0) }} years</span></div>
+                </div>
+            </div>
+        </div>
+
+        {% if let Some(own) = owner %}
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-user"></i> Owner Information</h3></div>
+            <div class="card-body">
+                <div class="owner-profile">
+                    <div class="owner-avatar"><i class="fas fa-user-circle"></i></div>
+                    <div class="owner-details"><h4>{{ own.full_name() }}</h4></div>
+                </div>
+                <div class="info-grid">
+                    <div class="info-item"><span class="info-label">Phone</span><span class="info-value">{% if let Some(ph) = own.phone_number %}{{ ph }}{% else %}N/A{% endif %}</span></div>
+                    <div class="info-item"><span class="info-label">Email</span><span class="info-value">{% if let Some(em) = own.email %}{{ em }}{% else %}N/A{% endif %}</span></div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Flood & Fire Risk -->
+    <div class="detail-grid">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-water"></i> Flood Zone Information</h3></div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item"><span class="info-label">Flood Zone</span><span class="info-value">{% if property.is_in_high_risk_flood_zone %}<span class="badge badge-danger"><i class="fas fa-exclamation-triangle"></i> High Risk</span>{% else if property.is_in_flood_zone %}<span class="badge badge-warning">Moderate</span>{% else %}<span class="badge badge-success">Minimal Risk</span>{% endif %}</span></div>
+                    <div class="info-item"><span class="info-label">Requires Flood Insurance</span><span class="info-value">{% if property.requires_flood_insurance %}<span class="badge badge-danger">Yes - Required</span>{% else %}<span class="badge badge-success">Not Required</span>{% endif %}</span></div>
+                </div>
+                <div class="data-source-note"><small><i class="fas fa-info-circle"></i> Flood zone data from FEMA National Flood Hazard Layer (NFHL)</small></div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-fire"></i> Fire Risk Assessment</h3></div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item"><span class="info-label">Fire Risk Level</span><span class="info-value">{% if let Some(frl) = property.fire_risk_level %}<span class="badge badge-warning"><i class="fas fa-fire"></i> {{ frl }}</span>{% else %}<span class="text-muted">Not assessed</span>{% endif %}</span></div>
+                    <div class="info-item"><span class="info-label">Wildfire Risk Score</span><span class="info-value"><span class="badge badge-info">{{ property.wildfire_risk_score.unwrap_or(0) }}/100</span></span></div>
+                    <div class="info-item"><span class="info-label">In Wildfire Zone</span><span class="info-value"><span class="badge {% if property.is_in_wildfire_zone %}badge-warning{% else %}badge-success{% endif %}">{% if property.is_in_wildfire_zone %}Yes{% else %}No{% endif %}</span></span></div>
+                </div>
+                <div class="data-source-note"><small><i class="fas fa-info-circle"></i> Fire risk data from NIFC/IRWIN and NASA FIRMS satellite detection</small></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Insurance Claims -->
+    {% if !claims.is_empty() %}
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-file-contract"></i> Insurance Claims ({{ claims.len() }})</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>Claim #</th><th>Type</th><th>Cause</th><th>Status</th><th>Category</th></tr></thead>
+                <tbody>
+                {% for claim in claims %}
+                <tr>
+                    <td><strong>{{ claim.claim_number }}</strong></td>
+                    <td><span class="badge badge-info">{{ claim.claim_type }}</span></td>
+                    <td>{{ claim.cause_of_loss }}</td>
+                    <td><span class="badge {% if claim.status == "Open" %}badge-warning{% else %}badge-success{% endif %}">{{ claim.status }}</span></td>
+                    <td>
+                        {% if claim.is_roof_claim %}<span class="badge badge-warning">Roof</span>{% endif %}
+                        {% if claim.is_flood_claim %}<span class="badge badge-info">Flood</span>{% endif %}
+                        {% if claim.is_fire_claim %}<span class="badge badge-danger">Fire</span>{% endif %}
+                        {% if claim.is_wind_claim %}<span class="badge badge-secondary">Wind</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Fire Incidents -->
+    {% if !fire_incidents.is_empty() %}
+    <div class="card">
+        <div class="card-header"><h3><i class="fas fa-fire-alt"></i> Nearby Fire Incidents ({{ fire_incidents.len() }})</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>Incident</th><th>Type</th><th>County</th></tr></thead>
+                <tbody>
+                {% for fi in fire_incidents %}
+                <tr>
+                    <td><strong>{{ fi.incident_name }}</strong></td>
+                    <td><span class="badge badge-warning">{{ fi.incident_type }}</span></td>
+                    <td>{% if let Some(c) = fi.county %}{{ c }}{% else %}N/A{% endif %}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Permit History -->
+    <div class="card permits-card">
+        <div class="card-header"><h3><i class="fas fa-file-alt"></i> Permit History ({{ permits.len() }})</h3></div>
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>Permit #</th><th>Category</th><th>Type</th><th>Status</th><th>Contractor</th></tr></thead>
+                <tbody>
+                {% for permit in permits %}
+                <tr class="{% if permit.is_roofing_permit %}row-roofing{% endif %}">
+                    <td><strong>{{ permit.permit_number }}</strong></td>
+                    <td><span class="badge {% if permit.work_category == "Roofing" %}badge-warning{% else %}badge-secondary{% endif %}">{{ permit.work_category }}</span></td>
+                    <td><span class="badge {% if permit.is_roofing_permit %}badge-warning{% else %}badge-secondary{% endif %}">{{ permit.permit_type }}</span></td>
+                    <td><span class="badge badge-secondary">{{ permit.status }}</span></td>
+                    <td><small>{% if let Some(cn) = permit.contractor_name %}{{ cn }}{% else %}N/A{% endif %}</small></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

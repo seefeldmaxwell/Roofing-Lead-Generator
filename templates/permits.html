@@ -1,0 +1,30 @@
+{% extends "app_layout.html" %}
+{% block title %}Recent Permits{% endblock %}
+{% block nav_permits %}active{% endblock %}
+{% block app_content %}
+<div class="permits-page">
+    <div class="page-header">
+        <h2><i class="fas fa-file-alt"></i> Recent Permits</h2>
+        <p>Latest roofing and building permits filed across Florida. Work categories are auto-classified from permit type and scope.</p>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <table class="data-table">
+                <thead><tr><th>Permit #</th><th>Category</th><th>Type</th><th>Status</th><th>Contractor</th></tr></thead>
+                <tbody>
+                {% for permit in permits %}
+                <tr class="{% if permit.is_roofing_permit %}row-roofing{% endif %}">
+                    <td><strong>{{ permit.permit_number }}</strong></td>
+                    <td><span class="badge {% if permit.work_category == "Roofing" %}badge-warning{% else if permit.work_category == "Electrical" %}badge-info{% else if permit.work_category == "Structural" %}badge-danger{% else %}badge-secondary{% endif %}">{{ permit.work_category }}</span></td>
+                    <td><span class="badge {% if permit.is_roofing_permit %}badge-warning{% else %}badge-secondary{% endif %}">{{ permit.permit_type }}</span></td>
+                    <td><span class="badge badge-secondary">{{ permit.status }}</span></td>
+                    <td><small>{% if let Some(cn) = permit.contractor_name %}{{ cn }}{% else %}N/A{% endif %}</small></td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

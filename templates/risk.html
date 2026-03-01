@@ -1,0 +1,55 @@
+{% extends "app_layout.html" %}
+{% block title %}Risk Assessment{% endblock %}
+{% block nav_risk %}active{% endblock %}
+{% block app_content %}
+<div class="risk-page">
+    <div class="page-header">
+        <h2><i class="fas fa-chart-bar"></i> Risk Assessment &amp; Lead Scoring</h2>
+        <p>Flood zones, fire risk, and claim data for public adjusters and roofers — powered by FEMA, NIFC, and NOAA</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card stat-primary"><div class="stat-icon"><i class="fas fa-water"></i></div><div class="stat-info"><span class="stat-number">{{ stats.properties_in_flood_zone }}</span><span class="stat-label">In Flood Zone</span></div></div>
+        <div class="stat-card stat-danger"><div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div><div class="stat-info"><span class="stat-number">{{ stats.properties_high_risk_flood }}</span><span class="stat-label">High-Risk Flood</span></div></div>
+        <div class="stat-card stat-warning"><div class="stat-icon"><i class="fas fa-fire"></i></div><div class="stat-info"><span class="stat-number">{{ stats.properties_high_fire_risk }}</span><span class="stat-label">High Fire Risk</span></div></div>
+        <div class="stat-card stat-success"><div class="stat-icon"><i class="fas fa-file-contract"></i></div><div class="stat-info"><span class="stat-number">{{ stats.total_insurance_claims }}</span><span class="stat-label">Insurance Claims</span></div></div>
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-water"></i> Flood &amp; Fire Risk by County</h3></div>
+            <div class="card-body">
+                <table class="data-table">
+                    <thead><tr><th>County</th><th>Properties</th><th>Flood Zone</th><th>High Fire Risk</th><th>Old Roofs</th></tr></thead>
+                    <tbody>
+                    {% for county in stats.county_breakdowns %}
+                    {% if county.property_count > 0 %}
+                    <tr>
+                        <td><strong>{{ county.county }}</strong></td>
+                        <td>{{ county.property_count }}</td>
+                        <td><span class="badge {% if county.flood_zone_count > 0 %}badge-info{% else %}badge-secondary{% endif %}">{{ county.flood_zone_count }}</span></td>
+                        <td><span class="badge {% if county.high_fire_risk_count > 0 %}badge-warning{% else %}badge-secondary{% endif %}">{{ county.high_fire_risk_count }}</span></td>
+                        <td><span class="badge {% if county.old_roof_count > 0 %}badge-danger{% else %}badge-success{% endif %}">{{ county.old_roof_count }}</span></td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3><i class="fas fa-database"></i> Real-Time Data Sources</h3></div>
+            <div class="card-body">
+                <div class="data-sources-list">
+                    <div class="data-source-row"><span class="badge badge-success">Live</span><strong>FEMA NFHL</strong><span class="text-muted">Flood zone by lat/long</span></div>
+                    <div class="data-source-row"><span class="badge badge-success">Live</span><strong>OpenFEMA</strong><span class="text-muted">Disaster declarations &amp; NFIP claims</span></div>
+                    <div class="data-source-row"><span class="badge badge-success">Live</span><strong>NIFC/IRWIN</strong><span class="text-muted">Active wildfire incidents</span></div>
+                    <div class="data-source-row"><span class="badge badge-success">Live</span><strong>NOAA Weather API</strong><span class="text-muted">Active weather alerts &amp; forecasts</span></div>
+                    <div class="data-source-row"><span class="badge badge-success">Live</span><strong>FDOT Statewide Parcels</strong><span class="text-muted">Property data for all 67 FL counties</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

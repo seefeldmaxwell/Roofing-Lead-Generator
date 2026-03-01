@@ -1,0 +1,105 @@
+{% extends "home/public_layout.html" %}
+{% block title %}FL Property Permit Tracker - Florida Property Intelligence{% endblock %}
+{% block content %}
+<section class="hero-section">
+    <div class="hero-inner">
+        <div class="hero-content">
+            <h1>Florida Property Intelligence<br/><span class="hero-accent">for Roofing Professionals</span></h1>
+            <p class="hero-description">
+                Access real-time property records, building permits, FEMA flood zones, and wildfire risk data
+                across all 67 Florida counties. Powered by official government APIs.
+            </p>
+            <div class="hero-actions">
+                <a href="/account/login" class="hero-btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Sign In Free
+                </a>
+                <a href="/counties" class="hero-btn-secondary">
+                    <i class="fas fa-map-marked-alt"></i> Browse by County
+                </a>
+            </div>
+            <div class="hero-trust">
+                <span><i class="fas fa-shield-alt"></i> 100% Government Data</span>
+                <span><i class="fas fa-lock-open"></i> Free Public Access</span>
+                <span><i class="fas fa-map-marked-alt"></i> All 67 FL Counties</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="stats-section">
+    <div class="section-inner">
+        <h2>Real-Time Florida Data</h2>
+        <div class="stats-showcase">
+            <div class="showcase-stat"><span class="showcase-number">{{ total_properties }}</span><span class="showcase-label">Properties Tracked</span></div>
+            <div class="showcase-stat"><span class="showcase-number">{{ total_permits }}</span><span class="showcase-label">Building Permits</span></div>
+            <div class="showcase-stat"><span class="showcase-number">{{ total_disasters }}</span><span class="showcase-label">FEMA Disasters</span></div>
+            <div class="showcase-stat"><span class="showcase-number">{{ counties_tracked }}</span><span class="showcase-label">Counties Covered</span></div>
+        </div>
+    </div>
+</section>
+
+<section class="features-section">
+    <div class="section-inner">
+        <h2>Government Data Sources</h2>
+        <p class="section-subtitle">All data sourced from official U.S. government APIs — free, public, and always up-to-date.</p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-building"></i></div>
+                <h3>FDOT Property Records</h3>
+                <p>Search property ownership, parcel data, and assessed values for all 67 Florida counties via FDOT ArcGIS.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-water"></i></div>
+                <h3>FEMA Flood Zones</h3>
+                <p>Lookup flood zones by coordinates using FEMA's National Flood Hazard Layer (NFHL) ArcGIS REST service.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-fire"></i></div>
+                <h3>Wildfire Risk Data</h3>
+                <p>Active wildfire incidents from NIFC/IRWIN and satellite fire detection from NASA FIRMS.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-cloud-showers-heavy"></i></div>
+                <h3>NOAA Storm Events</h3>
+                <p>Weather alerts and storm history from NOAA for targeted outreach after severe weather events.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-file-alt"></i></div>
+                <h3>Building Permits</h3>
+                <p>Track roofing and building permits with auto-classification into 17 work categories.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                <h3>FEMA Disasters</h3>
+                <p>Real-time federal disaster declarations affecting Florida from the OpenFEMA API.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="counties-preview">
+    <div class="section-inner">
+        <h2>Browse by County</h2>
+        <div class="counties-grid">
+            {% for (slug, name) in counties %}
+            <a href="/florida/{{ slug }}" class="county-link">{{ name }}</a>
+            {% endfor %}
+        </div>
+        <div style="text-align:center; margin-top:1.5rem;">
+            <a href="/counties" class="hero-btn-secondary"><i class="fas fa-map"></i> View All 67 Counties</a>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="section-inner">
+        <div class="cta-content">
+            <h2>Start Finding Roofing Leads Today</h2>
+            <p>Free access to Florida property data, permits, and risk analysis. No credit card required.</p>
+            <a href="/account/login" class="hero-btn-primary">
+                <i class="fas fa-sign-in-alt"></i> Sign In Free
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

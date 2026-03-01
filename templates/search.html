@@ -1,0 +1,75 @@
+{% extends "app_layout.html" %}
+{% block title %}Property Search{% endblock %}
+{% block nav_search %}active{% endblock %}
+{% block app_content %}
+<div class="search-page">
+    <div class="search-header-section">
+        <div class="search-mode-toggle">
+            <a href="/app/search" class="mode-btn {% if mode != "owner" %}active{% endif %}"><i class="fas fa-map-marker-alt"></i> Search by Address</a>
+            <a href="/app/search?mode=owner" class="mode-btn {% if mode == "owner" %}active{% endif %}"><i class="fas fa-user"></i> Search by Owner</a>
+        </div>
+
+        <form method="get" action="/app/search" class="search-form">
+            <input type="hidden" name="mode" value="{{ mode }}">
+            <div class="search-bar-container">
+                <div class="search-input-wrapper">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" name="q" value="{{ query }}"
+                           placeholder="{% if mode == "owner" %}Enter owner name...{% else %}Enter address, city, or zip code...{% endif %}">
+                </div>
+                <button type="submit" class="search-btn"><i class="fas fa-search"></i> Search</button>
+            </div>
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>County</label>
+                    <select name="county" class="filter-select">
+                        <option value="">All Counties</option>
+                        {% for c in counties %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group"><label>Min Roof Age</label><input type="number" class="filter-input" name="min_roof_age" placeholder="Min" value="{{ min_roof_age_str }}" min="0" max="50"></div>
+                <div class="filter-group"><label>Max Roof Age</label><input type="number" class="filter-input" name="max_roof_age" placeholder="Max" value="{{ max_roof_age_str }}" min="0" max="50"></div>
+                <button type="submit" class="filter-apply-btn"><i class="fas fa-filter"></i> Apply Filters</button>
+            </div>
+        </form>
+    </div>
+
+    {% if let Some(results) = results %}
+    <div class="results-header">
+        <span class="results-count"><strong>{{ results.total_count }}</strong> properties found</span>
+        <span class="results-page">Page {{ results.page }} of {{ results.total_pages() }}</span>
+    </div>
+    <div class="results-table-container">
+        <table class="data-table results-table">
+            <thead><tr><th>Address</th><th>Owner</th><th>Roof Age</th><th>Flood Zone</th><th>Fire Risk</th><th>Risk Score</th><th>Lead</th><th>Actions</th></tr></thead>
+            <tbody>
+            {% for result in results.items %}
+            <tr>
+                <td><div class="address-cell"><strong>{{ result.address }}</strong><small>{{ result.city }}, FL {{ result.zip_code }}</small></div></td>
+                <td><strong>{{ result.owner_name }}</strong></td>
+                <td><span class="badge {% if result.roof_age.unwrap_or(0) > 15 %}badge-danger{% else if result.roof_age.unwrap_or(0) > 10 %}badge-warning{% else %}badge-success{% endif %}">{{ result.roof_age.unwrap_or(0) }} yrs</span></td>
+                <td>{% if result.is_in_high_risk_flood_zone %}<span class="badge badge-danger"><i class="fas fa-water"></i> High Risk</span>{% else if result.is_in_flood_zone %}<span class="badge badge-info">Flood Zone</span>{% else %}<span class="badge badge-secondary">None</span>{% endif %}</td>
+                <td>{% if let Some(level) = result.fire_risk_level %}<span class="badge badge-warning"><i class="fas fa-fire"></i> {{ level }}</span>{% else %}<span class="badge badge-secondary">N/A</span>{% endif %}</td>
+                <td><span class="badge badge-info">{{ result.overall_risk_score.unwrap_or(0) }}/100</span></td>
+                <td>{% if let Some(lp) = result.lead_priority %}<span class="badge badge-warning">{{ lp }}</span>{% else %}<span class="badge badge-secondary">N/A</span>{% endif %}</td>
+                <td><a href="/app/property/{{ result.property_id }}" class="btn-view"><i class="fas fa-eye"></i> View</a></td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if results.total_pages() > 1 %}
+    <div class="pagination">
+        {% if results.has_previous_page() %}<a href="/app/search?q={{ query }}&amp;mode={{ mode }}&amp;county={{ selected_county }}&amp;page={{ results.page - 1 }}" class="page-btn"><i class="fas fa-chevron-left"></i> Previous</a>{% endif %}
+        {% if results.has_next_page() %}<a href="/app/search?q={{ query }}&amp;mode={{ mode }}&amp;county={{ selected_county }}&amp;page={{ results.page + 1 }}" class="page-btn">Next <i class="fas fa-chevron-right"></i></a>{% endif %}
+    </div>
+    {% endif %}
+
+    {% else if has_searched %}
+    <div class="no-results"><i class="fas fa-search"></i><h3>No properties found</h3><p>Try adjusting your search criteria or filters.</p></div>
+    {% else %}
+    <div class="search-prompt"><i class="fas fa-building"></i><h3>Search Florida Properties</h3><p>Enter an address, city, zip code, or owner name to search property records.</p></div>
+    {% endif %}
+</div>
+{% endblock %}
