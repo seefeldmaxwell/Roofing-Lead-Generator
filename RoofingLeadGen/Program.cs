@@ -19,14 +19,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")
         ?? "Data Source=RoofingLeadGen.db"));
 
-// ASP.NET Core Identity
+// ASP.NET Core Identity (OAuth-only, no passwords)
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
-    options.Password.RequireDigit = false;
-    options.Password.RequireLowercase = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequiredLength = 6;
     options.User.RequireUniqueEmail = true;
 })
 .AddEntityFrameworkStores<AppDbContext>()
@@ -38,6 +33,19 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.LogoutPath = "/account/logout";
     options.AccessDeniedPath = "/account/login";
 });
+
+// External OAuth providers (Microsoft + Google)
+builder.Services.AddAuthentication()
+    .AddMicrosoftAccount(options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Microsoft:ClientId"] ?? "";
+        options.ClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"] ?? "";
+    })
+    .AddGoogle(options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? "";
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "";
+    });
 
 // Real government API clients (FEMA, NOAA, FDOT, NIFC - all free, no auth required)
 builder.Services.AddHttpClient<FemaApiClient>();

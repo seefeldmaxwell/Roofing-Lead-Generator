@@ -1,32 +1,9 @@
-using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using RoofingLeadGen.Models;
 
 namespace RoofingLeadGen.Controllers;
-
-public class LoginModel
-{
-    [Required, EmailAddress]
-    public string Email { get; set; } = string.Empty;
-    [Required]
-    public string Password { get; set; } = string.Empty;
-    public bool RememberMe { get; set; }
-}
-
-public class RegisterModel
-{
-    [Required, StringLength(100)]
-    public string FullName { get; set; } = string.Empty;
-    [StringLength(100)]
-    public string? Company { get; set; }
-    [Required, EmailAddress]
-    public string Email { get; set; } = string.Empty;
-    [Required, MinLength(6)]
-    public string Password { get; set; } = string.Empty;
-    [Required, Compare("Password")]
-    public string ConfirmPassword { get; set; } = string.Empty;
-}
 
 [Route("account")]
 public class AccountController : Controller
@@ -44,63 +21,85 @@ public class AccountController : Controller
     public IActionResult Login(string? returnUrl = null)
     {
         ViewData["ReturnUrl"] = returnUrl ?? "/dashboard";
+        ViewData["Error"] = TempData["Error"];
         return View();
     }
 
-    [HttpPost("login")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(LoginModel model, string? returnUrl = null)
-    {
-        returnUrl ??= "/dashboard";
-        ViewData["ReturnUrl"] = returnUrl;
-
-        if (!ModelState.IsValid)
-            return View(model);
-
-        var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, lockoutOnFailure: false);
-        if (result.Succeeded)
-            return LocalRedirect(returnUrl);
-
-        ModelState.AddModelError(string.Empty, "Invalid email or password.");
-        return View(model);
-    }
-
+    // Register redirects to login (OAuth handles account creation automatically)
     [HttpGet("register")]
     public IActionResult Register(string? returnUrl = null)
     {
-        ViewData["ReturnUrl"] = returnUrl ?? "/dashboard";
-        return View();
+        return RedirectToAction("Login", new { returnUrl });
     }
 
-    [HttpPost("register")]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Register(RegisterModel model, string? returnUrl = null)
+    [HttpGet("external-login")]
+    public IActionResult ExternalLogin(string provider, string? returnUrl = null)
     {
         returnUrl ??= "/dashboard";
-        ViewData["ReturnUrl"] = returnUrl;
+        var redirectUrl = Url.Action("ExternalLoginCallback", "Account", new { returnUrl });
+        var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        return Challenge(properties, provider);
+    }
 
-        if (!ModelState.IsValid)
-            return View(model);
+    [HttpGet("external-login-callback")]
+    public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null)
+    {
+        returnUrl ??= "/dashboard";
 
-        var user = new ApplicationUser
+        var info = await _signInManager.GetExternalLoginInfoAsync();
+        if (info == null)
         {
-            UserName = model.Email,
-            Email = model.Email,
-            FullName = model.FullName,
-            Company = model.Company,
-        };
+            TempData["Error"] = "Unable to load external login information. Please try again.";
+            return RedirectToAction("Login", new { returnUrl });
+        }
 
-        var result = await _userManager.CreateAsync(user, model.Password);
-        if (result.Succeeded)
+        // Try to sign in with this external login
+        var signInResult = await _signInManager.ExternalLoginSignInAsync(
+            info.LoginProvider, info.ProviderKey, isPersistent: true, bypassTwoFactor: true);
+
+        if (signInResult.Succeeded)
         {
-            await _signInManager.SignInAsync(user, isPersistent: false);
             return LocalRedirect(returnUrl);
         }
 
-        foreach (var error in result.Errors)
-            ModelState.AddModelError(string.Empty, error.Description);
+        // First time login - create a new account automatically
+        var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+        var name = info.Principal.FindFirstValue(ClaimTypes.Name);
 
-        return View(model);
+        if (string.IsNullOrEmpty(email))
+        {
+            TempData["Error"] = "Could not retrieve email from your account. Please try a different provider.";
+            return RedirectToAction("Login", new { returnUrl });
+        }
+
+        // Check if a user with this email already exists (link the external login)
+        var existingUser = await _userManager.FindByEmailAsync(email);
+        if (existingUser != null)
+        {
+            await _userManager.AddLoginAsync(existingUser, info);
+            await _signInManager.SignInAsync(existingUser, isPersistent: true);
+            return LocalRedirect(returnUrl);
+        }
+
+        // Create new user
+        var user = new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            FullName = name,
+            EmailConfirmed = true,
+        };
+
+        var createResult = await _userManager.CreateAsync(user);
+        if (createResult.Succeeded)
+        {
+            await _userManager.AddLoginAsync(user, info);
+            await _signInManager.SignInAsync(user, isPersistent: true);
+            return LocalRedirect(returnUrl);
+        }
+
+        TempData["Error"] = "Failed to create account. Please try again.";
+        return RedirectToAction("Login", new { returnUrl });
     }
 
     [HttpPost("logout")]
