@@ -36,6 +36,7 @@ async fn main() {
 
     let fema_client = services::fema_client::FemaApiClient::new();
     db::seed_fema_data(&pool, &fema_client).await;
+    db::seed_sample_data(&pool).await;
 
     let oauth = OAuthConfig::from_env();
     let state = Arc::new(AppState { db: pool, oauth });
